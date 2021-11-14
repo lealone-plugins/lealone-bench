@@ -12,14 +12,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedTransferQueue;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.embed.EmbeddedBTest;
 import org.lealone.storage.StorageMap;
 import org.lealone.storage.aose.AOStorage;
 import org.lealone.storage.aose.AOStorageBuilder;
 import org.lealone.storage.aose.btree.BTreeMap;
 import org.lealone.storage.aose.btree.BTreePage;
 
-public abstract class StorageMapBTest extends BenchTest {
+public abstract class StorageMapBTest extends EmbeddedBTest {
 
     protected AOStorage storage;
     protected String storagePath;

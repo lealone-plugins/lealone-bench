@@ -7,9 +7,9 @@ package org.lealone.bench.embed.transaction;
 
 import java.nio.ByteBuffer;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.embed.EmbeddedBTest;
 
-public abstract class TransactionBTest extends BenchTest {
+public abstract class TransactionBTest extends EmbeddedBTest {
 
     public static void run(TransactionBTest test) throws Exception {
         test.run();

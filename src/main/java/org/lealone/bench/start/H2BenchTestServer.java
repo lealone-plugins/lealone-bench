@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench.server;
+package org.lealone.bench.start;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -20,9 +20,15 @@ public class H2BenchTestServer {
         // //list.add("-tool");
         // org.h2.tools.Server.main(list.toArray(new String[list.size()]));
         //
-        // list.add("-tcp");
-        // list.add("-tcpPort");
-        // list.add("9092");
+        list.add("-tcp");
+        list.add("-tcpPort");
+        list.add("9092");
+        list.add("-tcpAllowOthers");
+
+        list.add("-pg");
+        list.add("-pgPort");
+        list.add("9511");
+        list.add("-pgAllowOthers");
 
         // 测试org.h2.server.TcpServer.checkKeyAndGetDatabaseName(String)
         // list.add("-key");
@@ -30,11 +36,10 @@ public class H2BenchTestServer {
         // list.add("mydatabase");
 
         // list.add("-pg");
-        list.add("-tcp");
+        // list.add("-tcp");
         // list.add("-web");
         // list.add("-ifExists");
         list.add("-ifNotExists");
-        list.add("-tcpAllowOthers");
         org.h2.tools.Server.main(list.toArray(new String[list.size()]));
     }
 

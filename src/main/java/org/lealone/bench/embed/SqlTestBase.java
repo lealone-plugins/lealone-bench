@@ -3,13 +3,14 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench;
+package org.lealone.bench.embed;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.lealone.bench.TestBase;
 import org.lealone.common.exceptions.DbException;
 import org.lealone.db.RunMode;
 

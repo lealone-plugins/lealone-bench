@@ -10,9 +10,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.cs.ClientServerBTest;
 
-public abstract class ColumnLockBTest extends BenchTest {
+public abstract class ColumnLockBTest extends ClientServerBTest {
 
     private int count = 1000;
     private int columnCount = 99;

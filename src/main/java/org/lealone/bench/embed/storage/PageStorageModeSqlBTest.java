@@ -5,7 +5,7 @@
  */
 package org.lealone.bench.embed.storage;
 
-import org.lealone.bench.SqlTestBase;
+import org.lealone.bench.embed.SqlTestBase;
 import org.lealone.storage.aose.AOStorageEngine;
 import org.lealone.storage.aose.btree.PageStorageMode;
 

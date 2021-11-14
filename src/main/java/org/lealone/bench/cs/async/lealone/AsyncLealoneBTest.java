@@ -8,10 +8,10 @@ package org.lealone.bench.cs.async.lealone;
 import java.sql.Connection;
 import java.sql.Statement;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.cs.ClientServerBTest;
 import org.lealone.db.Constants;
 
-public abstract class AsyncLealoneBTest extends BenchTest {
+public abstract class AsyncLealoneBTest extends ClientServerBTest {
 
     public static Connection getConnection() throws Throwable {
         String url = "jdbc:lealone:tcp://localhost:" + Constants.DEFAULT_TCP_PORT + "/lealone";

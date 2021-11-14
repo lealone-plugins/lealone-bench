@@ -8,10 +8,10 @@ package org.lealone.bench.cs.query;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.cs.ClientServerBTest;
 
 //-XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xmx800M
-public abstract class QueryBTest extends BenchTest {
+public abstract class QueryBTest extends ClientServerBTest {
 
     public static void run(String name, Statement statement) throws Throwable {
         String sql = "select count(*) from test where f1+f2>1";

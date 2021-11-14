@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench.server;
+package org.lealone.bench.start;
 
 import org.lealone.main.Lealone;
 

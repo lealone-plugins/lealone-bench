@@ -9,11 +9,11 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Random;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.cs.ClientServerBTest;
 import org.lealone.client.jdbc.JdbcStatement;
 
 //测试同步和异步jdbc api的性能
-public abstract class JdbcBTest extends BenchTest {
+public abstract class JdbcBTest extends ClientServerBTest {
 
     protected final Random random = new Random();
 

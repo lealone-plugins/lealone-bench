@@ -8,10 +8,10 @@ package org.lealone.bench.cs.update;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.cs.ClientServerBTest;
 
 //-XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xmx800M
-public abstract class UpdateBTest extends BenchTest {
+public abstract class UpdateBTest extends ClientServerBTest {
 
     public static void run(String name, Statement statement) throws Throwable {
         String sql = "update test set f1=2 where name='abc1'";

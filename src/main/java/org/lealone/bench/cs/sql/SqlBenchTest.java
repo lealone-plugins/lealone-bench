@@ -9,9 +9,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.cs.ClientServerBTest;
 
-public abstract class SqlBenchTest extends BenchTest {
+public abstract class SqlBenchTest extends ClientServerBTest {
 
     protected abstract Connection getConnection() throws Exception;
 

@@ -8,7 +8,7 @@ package org.lealone.bench.embed.sql;
 import java.sql.Connection;
 
 import org.lealone.bench.cs.sql.SqlBenchTest;
-import org.lealone.bench.server.H2BenchTestServer;
+import org.lealone.bench.start.H2BenchTestServer;
 
 public class H2EmbeddedSqlBTest extends SqlBenchTest {
 

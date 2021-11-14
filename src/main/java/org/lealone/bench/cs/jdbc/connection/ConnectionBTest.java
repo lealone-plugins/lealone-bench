@@ -7,10 +7,10 @@ package org.lealone.bench.cs.jdbc.connection;
 
 import java.sql.Connection;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.cs.ClientServerBTest;
 
 //测试创建jdbc connection的性能
-public abstract class ConnectionBTest extends BenchTest {
+public abstract class ConnectionBTest extends ClientServerBTest {
 
     private final int connectionCount = 1000;
 

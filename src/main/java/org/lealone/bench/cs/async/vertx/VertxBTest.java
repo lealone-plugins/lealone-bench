@@ -8,11 +8,11 @@ package org.lealone.bench.cs.async.vertx;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.lealone.bench.BenchTest;
+import org.lealone.bench.cs.ClientServerBTest;
 
 import io.vertx.sqlclient.SqlClient;
 
-public abstract class VertxBTest extends BenchTest {
+public abstract class VertxBTest extends ClientServerBTest {
 
     public static void run(SqlClient client, String name, String sql) throws Throwable {
         int count = 1000;
