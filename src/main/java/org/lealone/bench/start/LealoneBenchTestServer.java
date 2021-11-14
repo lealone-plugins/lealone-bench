@@ -10,6 +10,7 @@ import org.lealone.main.Lealone;
 public class LealoneBenchTestServer {
 
     public static void main(String[] args) {
+        System.setProperty("lealone.config", "lealone-bench.yaml");
         Lealone.main(args);
     }
 }

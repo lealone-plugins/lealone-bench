@@ -28,6 +28,12 @@ sql_engines:
         # key1: v1,
         # key2: v2,
     }
+  - name: MySQL
+    enabled: true
+    parameters: {
+        # key1: v1,
+        # key2: v2,
+    }
   - name: PostgreSQL
     enabled: true
     parameters: {
@@ -49,7 +55,6 @@ protocol_server_engines:
   - name: MySQL
     enabled: true
     parameters: {
-        __runInMainThread__: false,
         port: 9310,
         trace: false,
         allow_others: true,
@@ -60,7 +65,6 @@ protocol_server_engines:
   - name: PostgreSQL
     enabled: true
     parameters: {
-        __runInMainThread__: false,
         port: 9510,
         trace: false,
         allow_others: true,
