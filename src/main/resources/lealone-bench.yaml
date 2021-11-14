@@ -23,7 +23,7 @@ transaction_engines:
 
 sql_engines:
   - name: Lealone
-    enabled: false
+    enabled: true
     parameters: {
         # key1: v1,
         # key2: v2,
