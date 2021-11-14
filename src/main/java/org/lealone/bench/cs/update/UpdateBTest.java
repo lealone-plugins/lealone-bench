@@ -14,6 +14,7 @@ import org.lealone.bench.cs.ClientServerBTest;
 public abstract class UpdateBTest extends ClientServerBTest {
 
     public static void run(String name, Statement statement) throws Throwable {
+        initData(statement);
         String sql = "update test set f1=2 where name='abc1'";
         int count = 1000;
         for (int i = 0; i < count * 5; i++)

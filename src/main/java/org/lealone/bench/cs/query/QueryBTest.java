@@ -14,6 +14,7 @@ import org.lealone.bench.cs.ClientServerBTest;
 public abstract class QueryBTest extends ClientServerBTest {
 
     public static void run(String name, Statement statement) throws Throwable {
+        initData(statement);
         String sql = "select count(*) from test where f1+f2>1";
         int count = 1000;
         for (int i = 0; i < count * 5; i++)
