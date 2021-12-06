@@ -23,6 +23,7 @@ public class AsyncLealoneUpdateBTest extends AsyncLealoneBTest {
     }
 
     public static void run(String name, Statement statement) throws Throwable {
+        initData(statement);
         JdbcStatement stmt = (JdbcStatement) statement;
         String sql = "update test set f1=2 where name='abc1'";
         int count = 1000;
@@ -34,7 +35,7 @@ public class AsyncLealoneUpdateBTest extends AsyncLealoneBTest {
         }
         latch1.await();
 
-        int loop = 20;
+        int loop = 30 * 10;
         for (int j = 0; j < loop; j++) {
             CountDownLatch latch = new CountDownLatch(count);
             long t1 = System.nanoTime();

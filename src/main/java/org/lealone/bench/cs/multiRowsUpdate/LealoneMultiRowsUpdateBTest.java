@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench.cs.columnlock;
+package org.lealone.bench.cs.multiRowsUpdate;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -11,7 +11,7 @@ import java.sql.Statement;
 import org.lealone.bench.cs.async.lealone.AsyncLealoneBTest;
 import org.lealone.xsql.postgresql.server.PgServer;
 
-public class LealoneColumnLockBTest extends ColumnLockBTest {
+public class LealoneMultiRowsUpdateBTest extends MultiRowsUpdateBTest {
 
     public static void main(String[] args) throws Exception {
         Connection conn = getSyncConnection();
@@ -20,7 +20,7 @@ public class LealoneColumnLockBTest extends ColumnLockBTest {
         statement.close();
         conn.close();
 
-        new LealoneColumnLockBTest().run();
+        new LealoneMultiRowsUpdateBTest().run();
     }
 
     @Override

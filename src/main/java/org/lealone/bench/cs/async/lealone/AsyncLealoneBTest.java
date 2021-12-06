@@ -9,17 +9,24 @@ import java.sql.Connection;
 import java.sql.Statement;
 
 import org.lealone.bench.cs.ClientServerBTest;
+import org.lealone.db.ConnectionSetting;
 import org.lealone.db.Constants;
 
 public abstract class AsyncLealoneBTest extends ClientServerBTest {
 
     public static Connection getConnection() throws Throwable {
-        String url = "jdbc:lealone:tcp://localhost:" + Constants.DEFAULT_TCP_PORT + "/lealone";
+        String url = getUrl();
         Connection conn = getConnection(url, "root", "");
         Statement statement = conn.createStatement();
         statement.executeUpdate("set QUERY_CACHE_SIZE 0;");
 
         statement.close();
         return conn;
+    }
+
+    public static String getUrl() {
+        String url = "jdbc:lealone:tcp://localhost:" + Constants.DEFAULT_TCP_PORT + "/lealone";
+        url += "?" + ConnectionSetting.NETWORK_TIMEOUT + "=" + Integer.MAX_VALUE;
+        return url;
     }
 }

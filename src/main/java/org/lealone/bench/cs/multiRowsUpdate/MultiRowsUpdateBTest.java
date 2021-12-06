@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench.cs.columnlock;
+package org.lealone.bench.cs.multiRowsUpdate;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -14,19 +14,19 @@ import java.util.concurrent.TimeUnit;
 import org.lealone.bench.cs.ClientServerBTest;
 import org.lealone.client.jdbc.JdbcStatement;
 
-public abstract class ColumnLockBTest extends ClientServerBTest {
+public abstract class MultiRowsUpdateBTest extends ClientServerBTest {
 
-    private int loop = 200;
+    private int loop = 100;
     private int count = 500;
-    private int columnCount = 12;
-    private String[] sqls = new String[columnCount];
-    private String[] sqlsWarmUp = new String[columnCount];
+    private int rowCount = 8;
+    private String[] sqls = new String[rowCount];
+    private String[] sqlsWarmUp = new String[rowCount];
     boolean async;
 
     @Override
     public void run() throws Exception {
         init();
-        run(columnCount);
+        run(rowCount);
     }
 
     public abstract Connection getConnection() throws Exception;
@@ -44,36 +44,19 @@ public abstract class ColumnLockBTest extends ClientServerBTest {
     protected void init() throws Exception {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
-        statement.executeUpdate("drop table if exists ColumnLockPerfTest");
+        statement.executeUpdate("drop table if exists MultiRowsUpdateBTest");
+        String sql = "create table if not exists MultiRowsUpdateBTest(pk int primary key, f1 int)";
+        statement.executeUpdate(sql);
 
-        StringBuilder buff = new StringBuilder();
-        buff.append("create table if not exists ColumnLockPerfTest(pk int primary key");
-        for (int i = 1; i <= columnCount; i++) {
-            buff.append(",f").append(i).append(" int");
+        for (int row = 1; row <= rowCount; row++) {
+            sql = "insert into MultiRowsUpdateBTest values(" + row + ",1)";
+            statement.executeUpdate(sql);
         }
-        buff.append(")");
-        statement.executeUpdate(buff.toString());
-
-        for (int row = 1; row <= 9; row++) {
-            buff = new StringBuilder();
-            buff.append("insert into ColumnLockPerfTest values(").append(row);
-            for (int i = 1; i <= columnCount; i++) {
-                buff.append(",").append(i * 10);
-            }
-            buff.append(")");
-            statement.executeUpdate(buff.toString());
+        for (int i = 1; i <= rowCount; i++) {
+            sqls[i - 1] = "update MultiRowsUpdateBTest set f1=10 where pk=" + i;
         }
-        for (int i = 1; i <= columnCount; i++) {
-            buff = new StringBuilder();
-            buff.append("update ColumnLockPerfTest set f").append(i).append(" = ").append(i * 1000)
-                    .append(" where pk=5");
-            sqls[i - 1] = buff.toString();
-        }
-        for (int i = 1; i <= columnCount; i++) {
-            buff = new StringBuilder();
-            buff.append("update ColumnLockPerfTest set f").append(i).append(" = ").append(i * 100)
-                    .append(" where pk=5");
-            sqlsWarmUp[i - 1] = buff.toString();
+        for (int i = 1; i <= rowCount; i++) {
+            sqlsWarmUp[i - 1] = "update MultiRowsUpdateBTest set f1=20 where pk=" + i;
         }
         close(statement, conn);
     }
@@ -97,7 +80,7 @@ public abstract class ColumnLockBTest extends ClientServerBTest {
         }
         long t2 = System.nanoTime();
         System.out.println(getName() + " total time: " + //
-                TimeUnit.NANOSECONDS.toSeconds(t2 - t1) + " seconds");
+                TimeUnit.NANOSECONDS.toMillis(t2 - t1) + " ms");
     }
 
     private class UpdateThread extends Thread {

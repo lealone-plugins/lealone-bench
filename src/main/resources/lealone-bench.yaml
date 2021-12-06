@@ -29,7 +29,7 @@ sql_engines:
         # key2: v2,
     }
   - name: MySQL
-    enabled: true
+    enabled: false
     parameters: {
         # key1: v1,
         # key2: v2,
@@ -53,7 +53,7 @@ protocol_server_engines:
         ssl: false
     }
   - name: MySQL
-    enabled: true
+    enabled: false
     parameters: {
         port: 9310,
         trace: false,
