@@ -7,14 +7,14 @@ package org.lealone.bench.cs.multiRowsUpdate;
 
 import java.sql.Connection;
 
-public class MySQLMultiRowsUpdateBTest extends MultiRowsUpdateBTest {
+public class PgMultiRowsUpdateBTest extends MultiRowsUpdateBTest {
 
     public static void main(String[] args) throws Throwable {
-        new MySQLMultiRowsUpdateBTest().run();
+        new PgMultiRowsUpdateBTest().run();
     }
 
     @Override
     public Connection getConnection() throws Exception {
-        return getMySQLConnection();
+        return getConnection(5432);
     }
 }

@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench.cs.columnlock;
+package org.lealone.bench.cs.insert;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -14,19 +14,19 @@ import java.util.concurrent.TimeUnit;
 import org.lealone.bench.cs.ClientServerBTest;
 import org.lealone.client.jdbc.JdbcStatement;
 
-public abstract class ColumnLockBTest extends ClientServerBTest {
+public abstract class InsertBTest extends ClientServerBTest {
 
     private int loop = 100;
     private int count = 500;
-    private int columnCount = 16;
-    private String[] sqls = new String[columnCount];
-    private String[] sqlsWarmUp = new String[columnCount];
+    private int threadCount = 8;
+    private int rowCount = loop * count * threadCount;
+    private String[] sqls = new String[rowCount];
     boolean async;
 
     @Override
     public void run() throws Exception {
         init();
-        run(columnCount);
+        run(threadCount);
     }
 
     public abstract Connection getConnection() throws Exception;
@@ -44,36 +44,12 @@ public abstract class ColumnLockBTest extends ClientServerBTest {
     protected void init() throws Exception {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
-        statement.executeUpdate("drop table if exists ColumnLockPerfTest");
+        statement.executeUpdate("drop table if exists InsertBTest");
+        String sql = "create table if not exists InsertBTest(pk int primary key, f1 int)";
+        statement.executeUpdate(sql);
 
-        StringBuilder buff = new StringBuilder();
-        buff.append("create table if not exists ColumnLockPerfTest(pk int primary key");
-        for (int i = 1; i <= columnCount; i++) {
-            buff.append(",f").append(i).append(" int");
-        }
-        buff.append(")");
-        statement.executeUpdate(buff.toString());
-
-        for (int row = 1; row <= 9; row++) {
-            buff = new StringBuilder();
-            buff.append("insert into ColumnLockPerfTest values(").append(row);
-            for (int i = 1; i <= columnCount; i++) {
-                buff.append(",").append(i * 10);
-            }
-            buff.append(")");
-            statement.executeUpdate(buff.toString());
-        }
-        for (int i = 1; i <= columnCount; i++) {
-            buff = new StringBuilder();
-            buff.append("update ColumnLockPerfTest set f").append(i).append(" = ").append(i * 1000)
-                    .append(" where pk=5");
-            sqls[i - 1] = buff.toString();
-        }
-        for (int i = 1; i <= columnCount; i++) {
-            buff = new StringBuilder();
-            buff.append("update ColumnLockPerfTest set f").append(i).append(" = ").append(i * 100)
-                    .append(" where pk=5");
-            sqlsWarmUp[i - 1] = buff.toString();
+        for (int i = 1; i <= rowCount; i++) {
+            sqls[i - 1] = "insert into InsertBTest values(" + i + ",1)";
         }
         close(statement, conn);
     }
@@ -84,9 +60,6 @@ public abstract class ColumnLockBTest extends ClientServerBTest {
         for (int i = 0; i < threadCount; i++) {
             Connection conn = getConnection();
             threads[i] = new UpdateThread(i, conn);
-        }
-        for (int i = 0; i < threadCount; i++) {
-            threads[i].warmUp();
         }
         long t1 = System.nanoTime();
         for (int i = 0; i < threadCount; i++) {
@@ -103,44 +76,37 @@ public abstract class ColumnLockBTest extends ClientServerBTest {
     private class UpdateThread extends Thread {
         Connection conn;
         Statement stmt;
-        String sql;
-        String sqlWarmUp;
+        int start;
 
         UpdateThread(int id, Connection conn) throws Exception {
             super("UpdateThread-" + id);
             this.conn = conn;
             this.stmt = conn.createStatement();
-            this.sql = sqls[id];
-            this.sqlWarmUp = sqlsWarmUp[id];
+            start = loop * count * id;
         }
 
         @Override
         public void run() {
             try {
                 if (async)
-                    executeUpdateAsync(stmt, sql);
+                    executeUpdateAsync(stmt, start);
                 else
-                    executeUpdate(stmt, sql);
+                    executeUpdate(stmt, start);
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
                 close(stmt, conn);
             }
         }
-
-        public void warmUp() throws Exception {
-            for (int i = 0; i < count * 2; i++)
-                stmt.executeUpdate(sqlWarmUp);
-        }
     }
 
-    private void executeUpdateAsync(Statement statement, String sql) throws Exception {
+    private void executeUpdateAsync(Statement statement, int start) throws Exception {
         JdbcStatement stmt = (JdbcStatement) statement;
         for (int j = 0; j < loop; j++) {
             CountDownLatch latch = new CountDownLatch(count);
             long t1 = System.nanoTime();
             for (int i = 0; i < count; i++) {
-                stmt.executeUpdateAsync(sql).onComplete(ar -> {
+                stmt.executeUpdateAsync(sqls[start++]).onComplete(ar -> {
                     latch.countDown();
                 });
             }
@@ -151,21 +117,19 @@ public abstract class ColumnLockBTest extends ClientServerBTest {
         System.out.println();
         System.out.println("time: 微秒");
         System.out.println("loop: " + loop + " * " + count);
-        System.out.println("sql : " + sql);
     }
 
-    private void executeUpdate(Statement statement, String sql) throws Exception {
+    private void executeUpdate(Statement statement, int start) throws Exception {
         for (int j = 0; j < loop; j++) {
             long t1 = System.nanoTime();
             for (int i = 0; i < count; i++)
-                statement.executeUpdate(sql);
+                statement.executeUpdate(sqls[start++]);
             long t2 = System.nanoTime();
             System.out.println(getName() + ": " + TimeUnit.NANOSECONDS.toMicros(t2 - t1) / count);
         }
         System.out.println();
         System.out.println("time: 微秒");
         System.out.println("loop: " + loop + " * " + count);
-        System.out.println("sql : " + sql);
     }
 
     private static void close(Statement stmt, Connection conn) {

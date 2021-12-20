@@ -3,14 +3,14 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench.cs.multiRowsUpdate;
+package org.lealone.bench.cs.append;
 
 import java.sql.Connection;
 
-public class MySQLMultiRowsUpdateBTest extends MultiRowsUpdateBTest {
+public class MySQLAppendBTest extends AppendBTest {
 
     public static void main(String[] args) throws Throwable {
-        new MySQLMultiRowsUpdateBTest().run();
+        new MySQLAppendBTest().run();
     }
 
     @Override
