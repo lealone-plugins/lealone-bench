@@ -6,7 +6,6 @@
 package org.lealone.bench.cs.insert;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -27,17 +26,6 @@ public abstract class InsertBTest extends ClientServerBTest {
     public void run() throws Exception {
         init();
         run(threadCount);
-    }
-
-    public abstract Connection getConnection() throws Exception;
-
-    public static Connection getConnection(int port) throws Exception {
-        String url = "jdbc:postgresql://localhost:" + port + "/test";
-        return getConnection(url, "test", "test");
-    }
-
-    private String getName() {
-        return getClass().getSimpleName();
     }
 
     @Override
@@ -130,18 +118,5 @@ public abstract class InsertBTest extends ClientServerBTest {
         System.out.println();
         System.out.println("time: 微秒");
         System.out.println("loop: " + loop + " * " + count);
-    }
-
-    private static void close(Statement stmt, Connection conn) {
-        try {
-            stmt.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 }

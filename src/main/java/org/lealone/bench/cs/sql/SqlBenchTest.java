@@ -13,8 +13,6 @@ import org.lealone.bench.cs.ClientServerBTest;
 
 public abstract class SqlBenchTest extends ClientServerBTest {
 
-    protected abstract Connection getConnection() throws Exception;
-
     @Override
     protected void init() throws Exception {
         Connection conn = getConnection();

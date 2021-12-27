@@ -18,6 +18,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.lealone.bench.embed.TestBase;
 import org.lealone.db.LealoneDatabase;
 import org.lealone.db.SysProperties;
 import org.lealone.transaction.aote.log.LogSyncService;

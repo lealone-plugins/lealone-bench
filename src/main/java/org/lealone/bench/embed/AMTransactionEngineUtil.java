@@ -8,7 +8,6 @@ package org.lealone.bench.embed;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.lealone.bench.TestBase;
 import org.lealone.db.Constants;
 import org.lealone.storage.Storage;
 import org.lealone.storage.StorageBuilder;

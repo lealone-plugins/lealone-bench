@@ -5,16 +5,11 @@
  */
 package org.lealone.bench.cs.columnlock;
 
-import java.sql.Connection;
+import org.lealone.bench.DbType;
 
 public class PgColumnLockBTest extends ColumnLockBTest {
 
-    public static void main(String[] args) throws Throwable {
-        new PgColumnLockBTest().run();
-    }
-
-    @Override
-    public Connection getConnection() throws Exception {
-        return getConnection(5432);
+    public static void main(String[] args) {
+        new PgColumnLockBTest().run(DbType.PostgreSQL);
     }
 }

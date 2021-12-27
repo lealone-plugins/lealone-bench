@@ -10,7 +10,7 @@ import java.io.IOException;
 
 import org.lealone.storage.fs.FileUtils;
 
-public class DeleteBenchTestData {
+public class DeleteBTestData {
 
     public static void main(String[] args) throws IOException {
         FileUtils.deleteRecursive(BenchTest.BENCH_TEST_BASE_DIR, true);

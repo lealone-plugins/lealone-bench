@@ -5,8 +5,8 @@
  */
 package org.lealone.bench.embed.storage;
 
-import org.lealone.bench.TestBase;
 import org.lealone.bench.embed.AOStorageUtil;
+import org.lealone.bench.embed.TestBase;
 import org.lealone.db.index.standard.ValueDataType;
 import org.lealone.db.index.standard.VersionedValue;
 import org.lealone.db.index.standard.VersionedValueType;

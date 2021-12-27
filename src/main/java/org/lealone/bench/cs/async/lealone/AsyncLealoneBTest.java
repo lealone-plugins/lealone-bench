@@ -14,7 +14,7 @@ import org.lealone.db.Constants;
 
 public abstract class AsyncLealoneBTest extends ClientServerBTest {
 
-    public static Connection getConnection() throws Throwable {
+    public static Connection getLealoneConnection() throws Exception {
         String url = getUrl();
         Connection conn = getConnection(url, "root", "");
         Statement statement = conn.createStatement();

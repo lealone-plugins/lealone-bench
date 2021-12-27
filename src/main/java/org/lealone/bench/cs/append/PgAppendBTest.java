@@ -5,16 +5,11 @@
  */
 package org.lealone.bench.cs.append;
 
-import java.sql.Connection;
+import org.lealone.bench.DbType;
 
 public class PgAppendBTest extends AppendBTest {
 
-    public static void main(String[] args) throws Throwable {
-        new PgAppendBTest().run();
-    }
-
-    @Override
-    public Connection getConnection() throws Exception {
-        return getConnection(5432);
+    public static void main(String[] args) {
+        new PgAppendBTest().run(DbType.PostgreSQL);
     }
 }

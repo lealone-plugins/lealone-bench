@@ -5,16 +5,11 @@
  */
 package org.lealone.bench.cs.multiRowsUpdate;
 
-import java.sql.Connection;
+import org.lealone.bench.DbType;
 
 public class MySQLMultiRowsUpdateBTest extends MultiRowsUpdateBTest {
 
-    public static void main(String[] args) throws Throwable {
-        new MySQLMultiRowsUpdateBTest().run();
-    }
-
-    @Override
-    public Connection getConnection() throws Exception {
-        return getMySQLConnection();
+    public static void main(String[] args) {
+        new MySQLMultiRowsUpdateBTest().run(DbType.MySQL);
     }
 }

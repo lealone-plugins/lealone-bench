@@ -5,16 +5,11 @@
  */
 package org.lealone.bench.cs.multiRowsUpdate;
 
-import java.sql.Connection;
+import org.lealone.bench.DbType;
 
 public class PgMultiRowsUpdateBTest extends MultiRowsUpdateBTest {
 
-    public static void main(String[] args) throws Throwable {
-        new PgMultiRowsUpdateBTest().run();
-    }
-
-    @Override
-    public Connection getConnection() throws Exception {
-        return getConnection(5432);
+    public static void main(String[] args) {
+        new PgMultiRowsUpdateBTest().run(DbType.PostgreSQL);
     }
 }

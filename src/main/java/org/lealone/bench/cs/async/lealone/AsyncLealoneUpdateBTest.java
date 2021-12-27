@@ -15,7 +15,7 @@ import org.lealone.client.jdbc.JdbcStatement;
 public class AsyncLealoneUpdateBTest extends AsyncLealoneBTest {
 
     public static void main(String[] args) throws Throwable {
-        Connection conn = getConnection();
+        Connection conn = getLealoneConnection();
         Statement statement = conn.createStatement();
         run("AsyncLealoneUpdate", statement);
         statement.close();

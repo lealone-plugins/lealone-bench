@@ -5,7 +5,6 @@
  */
 package org.lealone.bench.embed;
 
-import org.lealone.bench.TestBase;
 import org.lealone.storage.aose.AOStorage;
 import org.lealone.storage.aose.AOStorageBuilder;
 

@@ -5,38 +5,11 @@
  */
 package org.lealone.bench.cs.columnlock;
 
-import java.sql.Connection;
-import java.sql.Statement;
-
-import org.lealone.bench.cs.async.lealone.AsyncLealoneBTest;
-import org.lealone.xsql.postgresql.server.PgServer;
+import org.lealone.bench.DbType;
 
 public class LealoneColumnLockBTest extends ColumnLockBTest {
 
-    public static void main(String[] args) throws Exception {
-        Connection conn = getSyncConnection();
-        Statement statement = conn.createStatement();
-        statement.executeUpdate("set QUERY_CACHE_SIZE 0");
-        statement.close();
-        conn.close();
-
-        new LealoneColumnLockBTest().run();
-    }
-
-    @Override
-    public Connection getConnection() throws Exception {
-        // return getPgConnection();
-        return getSyncConnection();
-    }
-
-    public static Connection getSyncConnection() throws Exception {
-        String url = AsyncLealoneBTest.getUrl();
-        Connection conn = getConnection(url, "root", "");
-        // conn= getConnection(PgServer.DEFAULT_PORT);
-        return conn;
-    }
-
-    public static Connection getPgConnection() throws Exception {
-        return getConnection(PgServer.DEFAULT_PORT);
+    public static void main(String[] args) {
+        new LealoneColumnLockBTest().run(DbType.Lealone);
     }
 }

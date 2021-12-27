@@ -5,16 +5,11 @@
  */
 package org.lealone.bench.cs.append;
 
-import java.sql.Connection;
+import org.lealone.bench.DbType;
 
 public class MySQLAppendBTest extends AppendBTest {
 
-    public static void main(String[] args) throws Throwable {
-        new MySQLAppendBTest().run();
-    }
-
-    @Override
-    public Connection getConnection() throws Exception {
-        return getMySQLConnection();
+    public static void main(String[] args) {
+        new MySQLAppendBTest().run(DbType.MySQL);
     }
 }

@@ -3,14 +3,14 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench.cs.insert;
+package org.lealone.bench.cs.append;
 
 import org.lealone.bench.DbType;
 
-public class AsyncLealoneInsertBTest extends InsertBTest {
+public class AsyncLealoneAppendBTest extends AppendBTest {
 
     public static void main(String[] args) {
-        AsyncLealoneInsertBTest test = new AsyncLealoneInsertBTest();
+        AsyncLealoneAppendBTest test = new AsyncLealoneAppendBTest();
         test.async = true;
         test.run(DbType.Lealone);
     }

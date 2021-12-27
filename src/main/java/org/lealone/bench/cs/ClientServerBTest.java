@@ -11,8 +11,56 @@ import java.sql.Statement;
 import java.util.Properties;
 
 import org.lealone.bench.BenchTest;
+import org.lealone.bench.DbType;
+import org.lealone.db.ConnectionSetting;
+import org.lealone.db.Constants;
+import org.lealone.xsql.postgresql.server.PgServer;
 
 public abstract class ClientServerBTest extends BenchTest {
+
+    private DbType dbType;
+    boolean disableLealoneQueryCache = true;
+
+    public void run(DbType dbType) {
+        this.dbType = dbType;
+        try {
+            if (dbType == DbType.Lealone && disableLealoneQueryCache) {
+                disableLealoneQueryCache();
+            }
+            run();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected Connection getConnection() throws Exception {
+        switch (dbType) {
+        case H2:
+            return getH2Connection();
+        case MySQL:
+            return getMySQLConnection();
+        case PostgreSQL:
+            return getPgConnection();
+        case Lealone:
+            return getLealoneConnection();
+        default:
+            throw new RuntimeException();
+        }
+    }
+
+    protected String getName() {
+        return getClass().getSimpleName();
+    }
+
+    protected static void close(AutoCloseable... acArray) {
+        for (AutoCloseable ac : acArray) {
+            try {
+                ac.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     protected static void initData(Statement statement) throws Exception {
         statement.executeUpdate("drop table if exists test");
@@ -51,5 +99,45 @@ public abstract class ClientServerBTest extends BenchTest {
         Connection conn = DriverManager.getConnection(url, info);
         // conn.setAutoCommit(true);
         return conn;
+    }
+
+    public static Connection getPgConnection() throws Exception {
+        String url = "jdbc:postgresql://localhost:" + 5432 + "/test";
+        return getConnection(url, "test", "test");
+    }
+
+    public static Connection getH2Connection() throws Exception {
+        String url = "jdbc:h2:tcp://localhost:9092/mydb";
+        return getConnection(url, "sa", "");
+    }
+
+    public static Connection getLealoneConnection() throws Exception {
+        String url = "jdbc:lealone:tcp://localhost:" + Constants.DEFAULT_TCP_PORT + "/lealone";
+        url += "?" + ConnectionSetting.NETWORK_TIMEOUT + "=" + Integer.MAX_VALUE;
+        url += "&" + ConnectionSetting.IS_SHARED + "=false";
+        Connection conn = getConnection(url, "root", "");
+        // conn= getConnection(PgServer.DEFAULT_PORT);
+        return conn;
+    }
+
+    public static Connection getLealonePgConnection() throws Exception {
+        return getPgConnection(PgServer.DEFAULT_PORT);
+    }
+
+    public static Connection getPgConnection(int port) throws Exception {
+        String url = "jdbc:postgresql://localhost:" + port + "/test";
+        return getConnection(url, "test", "test");
+    }
+
+    public static void disableLealoneQueryCache() {
+        try {
+            Connection conn = getLealoneConnection();
+            Statement statement = conn.createStatement();
+            statement.executeUpdate("set QUERY_CACHE_SIZE 0");
+            statement.close();
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

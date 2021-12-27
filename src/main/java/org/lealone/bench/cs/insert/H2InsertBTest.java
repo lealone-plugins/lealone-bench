@@ -7,9 +7,9 @@ package org.lealone.bench.cs.insert;
 
 import org.lealone.bench.DbType;
 
-public class PgInsertBTest extends InsertBTest {
+public class H2InsertBTest extends InsertBTest {
 
     public static void main(String[] args) {
-        new PgInsertBTest().run(DbType.PostgreSQL);
+        new H2InsertBTest().run(DbType.H2);
     }
 }

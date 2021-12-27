@@ -5,16 +5,11 @@
  */
 package org.lealone.bench.cs.columnlock;
 
-import java.sql.Connection;
+import org.lealone.bench.DbType;
 
 public class MySQLColumnLockBTest extends ColumnLockBTest {
 
-    public static void main(String[] args) throws Throwable {
-        new MySQLColumnLockBTest().run();
-    }
-
-    @Override
-    public Connection getConnection() throws Exception {
-        return getMySQLConnection();
+    public static void main(String[] args) {
+        new MySQLColumnLockBTest().run(DbType.MySQL);
     }
 }

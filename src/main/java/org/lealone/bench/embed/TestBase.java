@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench;
+package org.lealone.bench.embed;
 
 import java.io.File;
 import java.sql.Connection;

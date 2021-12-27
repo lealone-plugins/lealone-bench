@@ -5,6 +5,7 @@
  */
 package org.lealone.bench.sharding;
 
-public class ShardingBTest {
+import org.lealone.bench.BenchTest;
 
+public class ShardingBTest extends BenchTest {
 }
