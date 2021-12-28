@@ -48,7 +48,7 @@ public abstract class ClientServerBTest extends BenchTest {
         }
     }
 
-    protected String getName() {
+    protected String getBTestName() {
         return getClass().getSimpleName();
     }
 
