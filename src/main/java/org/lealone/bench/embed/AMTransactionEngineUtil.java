@@ -9,18 +9,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.lealone.db.Constants;
+import org.lealone.db.PluginManager;
 import org.lealone.storage.Storage;
 import org.lealone.storage.StorageBuilder;
 import org.lealone.storage.StorageEngine;
-import org.lealone.storage.StorageEngineManager;
 import org.lealone.transaction.TransactionEngine;
-import org.lealone.transaction.TransactionEngineManager;
 import org.lealone.transaction.aote.log.LogSyncService;
 
 public class AMTransactionEngineUtil {
 
     public static Storage getStorage() {
-        StorageEngine se = StorageEngineManager.getStorageEngine(Constants.DEFAULT_STORAGE_ENGINE_NAME);
+        StorageEngine se = PluginManager.getPlugin(StorageEngine.class, Constants.DEFAULT_STORAGE_ENGINE_NAME);
 
         StorageBuilder storageBuilder = se.getStorageBuilder();
         storageBuilder.storagePath(TestBase.joinDirs("amte", "data"));
@@ -41,7 +40,8 @@ public class AMTransactionEngineUtil {
     }
 
     public static TransactionEngine getTransactionEngine(Map<String, String> config, boolean isDistributed) {
-        TransactionEngine te = TransactionEngineManager.getTransactionEngine(Constants.DEFAULT_TRANSACTION_ENGINE_NAME);
+        TransactionEngine te = PluginManager.getPlugin(TransactionEngine.class,
+                Constants.DEFAULT_TRANSACTION_ENGINE_NAME);
         if (config == null)
             config = getDefaultConfig();
         if (isDistributed) {

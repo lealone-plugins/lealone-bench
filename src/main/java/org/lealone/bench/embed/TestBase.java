@@ -19,12 +19,12 @@ import org.lealone.common.trace.TraceSystem;
 import org.lealone.db.ConnectionSetting;
 import org.lealone.db.Constants;
 import org.lealone.db.DbSetting;
+import org.lealone.db.PluginManager;
 import org.lealone.db.SysProperties;
 import org.lealone.p2p.config.Config;
 import org.lealone.storage.fs.FileUtils;
 import org.lealone.storage.memory.MemoryStorageEngine;
 import org.lealone.transaction.TransactionEngine;
-import org.lealone.transaction.TransactionEngineManager;
 import org.lealone.transaction.aote.log.LogSyncService;
 
 public class TestBase {
@@ -69,7 +69,7 @@ public class TestBase {
 
     public static synchronized void initTransactionEngine() {
         if (te == null) {
-            te = TransactionEngineManager.getInstance().getEngine(Constants.DEFAULT_TRANSACTION_ENGINE_NAME);
+            te = PluginManager.getPlugin(TransactionEngine.class, Constants.DEFAULT_TRANSACTION_ENGINE_NAME);
 
             Map<String, String> config = new HashMap<>();
             config.put("base_dir", TEST_DIR);
