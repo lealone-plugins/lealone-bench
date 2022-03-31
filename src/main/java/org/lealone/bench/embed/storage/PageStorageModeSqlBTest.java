@@ -7,7 +7,7 @@ package org.lealone.bench.embed.storage;
 
 import org.lealone.bench.embed.SqlTestBase;
 import org.lealone.storage.aose.AOStorageEngine;
-import org.lealone.storage.aose.btree.PageStorageMode;
+import org.lealone.storage.aose.btree.page.PageStorageMode;
 
 //把CACHE_SIZE加大后，RowStorage的方式有更多内存就不会重复从硬盘读取page，此时就跟ColumnStorage的性能差不多
 public class PageStorageModeSqlBTest extends SqlTestBase {

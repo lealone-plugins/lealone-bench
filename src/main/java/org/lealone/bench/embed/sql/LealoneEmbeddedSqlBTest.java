@@ -15,8 +15,8 @@ import org.lealone.bench.embed.AMTransactionEngineUtil;
 import org.lealone.client.jdbc.JdbcStatement;
 import org.lealone.db.SysProperties;
 import org.lealone.server.Scheduler;
-import org.lealone.storage.PageOperation;
-import org.lealone.storage.PageOperationHandlerFactory;
+import org.lealone.storage.page.PageOperation;
+import org.lealone.storage.page.PageOperationHandlerFactory;
 import org.lealone.transaction.TransactionEngine;
 
 public class LealoneEmbeddedSqlBTest extends SqlBenchTest {

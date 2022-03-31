@@ -11,14 +11,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.lealone.db.value.ValueInt;
 import org.lealone.db.value.ValueString;
-import org.lealone.storage.DefaultPageOperationHandler;
-import org.lealone.storage.PageOperation;
-import org.lealone.storage.PageOperationHandler;
-import org.lealone.storage.PageOperationHandlerFactory;
 import org.lealone.storage.aose.btree.BTreeMap;
-import org.lealone.storage.aose.btree.BTreePage;
-import org.lealone.storage.aose.btree.PageOperations.Put;
-import org.lealone.storage.aose.btree.PageReference;
+import org.lealone.storage.aose.btree.page.Page;
+import org.lealone.storage.aose.btree.page.PageOperations.Put;
+import org.lealone.storage.aose.btree.page.PageReference;
+import org.lealone.storage.page.DefaultPageOperationHandler;
+import org.lealone.storage.page.PageOperation;
+import org.lealone.storage.page.PageOperationHandler;
+import org.lealone.storage.page.PageOperationHandlerFactory;
 
 // -Xms512M -Xmx512M -XX:+PrintGCDetails -XX:+PrintGCTimeStamps
 public class AsyncBTreeBTest extends StorageMapBTest {
@@ -68,7 +68,7 @@ public class AsyncBTreeBTest extends StorageMapBTest {
     void printShiftCount(int[] keys) {
         HashMap<PageOperationHandler, Integer> map = new HashMap<>();
         for (int key : keys) {
-            BTreePage p = btreeMap.gotoLeafPage(key);
+            Page p = btreeMap.gotoLeafPage(key);
             PageOperationHandler handler = p.getHandler();
             Integer count = map.get(handler);
             if (count == null)
@@ -87,7 +87,7 @@ public class AsyncBTreeBTest extends StorageMapBTest {
     }
 
     void printLeafPageOperationHandlerPercent() {
-        BTreePage root = btreeMap.getRootPage();
+        Page root = btreeMap.getRootPage();
         HashMap<PageOperationHandler, Integer> map = new HashMap<>();
         AtomicLong leafPageCount = new AtomicLong(0);
         if (root.isLeaf()) {
@@ -105,10 +105,10 @@ public class AsyncBTreeBTest extends StorageMapBTest {
         System.out.println();
     }
 
-    private void findLeafPage(BTreePage p, HashMap<PageOperationHandler, Integer> map, AtomicLong leafPageCount) {
+    private void findLeafPage(Page p, HashMap<PageOperationHandler, Integer> map, AtomicLong leafPageCount) {
         if (p.isNode()) {
             for (PageReference ref : p.getChildren()) {
-                BTreePage child = ref.getPage();
+                Page child = ref.getPage();
                 if (child.isLeaf()) {
                     PageOperationHandler handler = child.getHandler();
                     // System.out.println("handler: " + handler);

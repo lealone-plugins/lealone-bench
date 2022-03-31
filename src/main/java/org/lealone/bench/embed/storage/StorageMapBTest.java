@@ -17,7 +17,7 @@ import org.lealone.storage.StorageMap;
 import org.lealone.storage.aose.AOStorage;
 import org.lealone.storage.aose.AOStorageBuilder;
 import org.lealone.storage.aose.btree.BTreeMap;
-import org.lealone.storage.aose.btree.BTreePage;
+import org.lealone.storage.aose.btree.page.Page;
 
 public abstract class StorageMapBTest extends EmbeddedBTest {
 
@@ -219,7 +219,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
 
     void testCopy() {
         int count = 50000;
-        BTreePage root = ((BTreeMap<Integer, String>) map).getRootPage();
+        Page root = ((BTreeMap<Integer, String>) map).getRootPage();
         long t1 = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             root.copy();

@@ -9,11 +9,11 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.lealone.bench.embed.AMTransactionEngineUtil;
-import org.lealone.storage.DefaultPageOperationHandler;
-import org.lealone.storage.PageOperation;
-import org.lealone.storage.PageOperationHandlerFactory;
 import org.lealone.storage.aose.AOStorage;
 import org.lealone.storage.aose.AOStorageBuilder;
+import org.lealone.storage.page.DefaultPageOperationHandler;
+import org.lealone.storage.page.PageOperation;
+import org.lealone.storage.page.PageOperationHandlerFactory;
 import org.lealone.transaction.Transaction;
 import org.lealone.transaction.TransactionEngine;
 import org.lealone.transaction.TransactionMap;
