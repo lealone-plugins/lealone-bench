@@ -5,6 +5,7 @@
  */
 package org.lealone.bench.embed.storage;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.lealone.db.value.ValueInt;
@@ -23,16 +24,8 @@ public class BTreeAsyncBTest extends StorageMapBTest {
         new BTreeAsyncBTest().run();
     }
 
-    private final AtomicInteger index = new AtomicInteger(0);
+    private final AtomicInteger lockCount = new AtomicInteger(0);
     private BTreeMap<Integer, String> btreeMap;
-    private DefaultPageOperationHandler[] handlers;
-    private int lockCount;
-
-    @Override
-    protected void resetFields() {
-        super.resetFields();
-        index.set(0);
-    }
 
     @Override
     protected void testWrite(int loop) {
@@ -63,27 +56,52 @@ public class BTreeAsyncBTest extends StorageMapBTest {
             return;
         initConfig();
         createPageOperationHandlers();
-        openStorage(false);
-        openMap();
-    }
-
-    private void createPageOperationHandlers() {
-        handlers = new DefaultPageOperationHandler[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            handlers[i] = new DefaultPageOperationHandler(i, config);
-        }
-        PageOperationHandlerFactory f = PageOperationHandlerFactory.create(config, handlers);
-        f.stopHandlers();
-        f.setPageOperationHandlers(handlers);
-        f.startHandlers();
+        openStorage();
+        map = btreeMap = storage.openBTreeMap(BTreeAsyncBTest.class.getSimpleName(), ValueInt.type, ValueString.type,
+                null);
     }
 
     @Override
-    protected void openMap() {
-        if (map == null || map.isClosed()) {
-            map = btreeMap = storage.openBTreeMap(BTreeAsyncBTest.class.getSimpleName(), ValueInt.type,
-                    ValueString.type, null);
+    protected void createData() {
+        if (map.isEmpty()) {
+            int t = threadCount;
+            threadCount = 1;
+            createPageOperationHandlers();
+            threadCount = t;
+            singleThreadSerialWrite();// 先生成初始数据
         }
+    }
+
+    @Override
+    void singleThreadSerialWrite() {
+        CountDownLatch latch = new CountDownLatch(rowCount);
+        long t1 = System.currentTimeMillis();
+        for (int i = 0; i < rowCount; i++) {
+            map.put(i, "valueaaa", ar -> {
+                latch.countDown();
+            });
+        }
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        long t2 = System.currentTimeMillis();
+        printResult("single-thread serial write time: " + (t2 - t1) + " ms, count: " + rowCount);
+    }
+
+    private void createPageOperationHandlers() {
+        DefaultPageOperationHandler[] handlers = new DefaultPageOperationHandler[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            handlers[i] = new DefaultPageOperationHandler(i + 1, config);
+        }
+        if (pohFactory != null) {
+            pohFactory.stopHandlers();
+            pohFactory.setPageOperationHandlers(handlers);
+        } else {
+            pohFactory = PageOperationHandlerFactory.create(config, handlers);
+        }
+        pohFactory.startHandlers();
     }
 
     @Override
@@ -92,14 +110,15 @@ public class BTreeAsyncBTest extends StorageMapBTest {
             printResult(loop,
                     ", row count: " + rowCount + ", thread count: " + threadCount + ", conflict keys: "
                             + conflictKeyCount + ", async write conflict, total time: " + totalTime + " ms, avg time: "
-                            + avgTime + " ms");
+                            + avgTime + " ms, lockCount " + lockCount.get());
         else
             printResult(loop, ", row count: " + rowCount + ", thread count: " + threadCount + ", async" + str
-                    + ", total time: " + totalTime + " ms, avg time: " + avgTime + " ms lockCount " + lockCount);
+                    + ", total time: " + totalTime + " ms, avg time: " + avgTime + " ms, lockCount " + lockCount.get());
     }
 
     @Override
     protected BenchTestTask createBenchTestTask(int start, int end) throws Exception {
+        lockCount.set(0);
         if (testConflictOnly)
             return new AsyncBTreeConflictBenchTestTask();
         else
@@ -112,9 +131,8 @@ public class BTreeAsyncBTest extends StorageMapBTest {
 
         AsyncBTreeBenchTestTask(int start, int end) throws Exception {
             super(start, end);
-            DefaultPageOperationHandler h = handlers[index.getAndIncrement()];
-            h.reset(false);
-            h.handlePageOperation(this);
+            currentHandler = pohFactory.getPageOperationHandler();
+            currentHandler.handlePageOperation(this);
         }
 
         @Override
@@ -131,7 +149,6 @@ public class BTreeAsyncBTest extends StorageMapBTest {
 
         @Override
         protected void write() throws Exception {
-            lockCount = 0;
             for (int i = start; i < end; i++) {
                 int key;
                 if (isRandom())
@@ -146,7 +163,7 @@ public class BTreeAsyncBTest extends StorageMapBTest {
 
                 PageOperationResult result = po.run(currentHandler);
                 if (result == PageOperationResult.LOCKED) {
-                    lockCount++;
+                    lockCount.incrementAndGet();
                     currentHandler.handlePageOperation(po);
                 } else if (result == PageOperationResult.RETRY) {
                     currentHandler.handlePageOperation(po);
@@ -170,7 +187,13 @@ public class BTreeAsyncBTest extends StorageMapBTest {
                 PageOperation po = new Put<>(btreeMap, key, value, ar -> {
                     notifyOperationComplete();
                 });
-                currentHandler.handlePageOperation(po);
+                PageOperationResult result = po.run(currentHandler);
+                if (result == PageOperationResult.LOCKED) {
+                    lockCount.incrementAndGet();
+                    currentHandler.handlePageOperation(po);
+                } else if (result == PageOperationResult.RETRY) {
+                    currentHandler.handlePageOperation(po);
+                }
             }
         }
     }

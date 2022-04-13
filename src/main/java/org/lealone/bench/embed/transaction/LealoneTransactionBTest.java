@@ -122,7 +122,6 @@ public class LealoneTransactionBTest extends TransactionBTest {
         LealoneTransactionBenchTestTask(int start, int end) throws Exception {
             super(start, end);
             DefaultPageOperationHandler h = handlers[index.getAndIncrement()];
-            h.reset(false);
             h.handlePageOperation(this);
         }
 

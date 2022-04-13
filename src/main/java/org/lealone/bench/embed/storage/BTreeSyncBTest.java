@@ -19,14 +19,7 @@ public class BTreeSyncBTest extends StorageMapBTest {
         if (!inited.compareAndSet(false, true))
             return;
         initConfig();
-        openStorage(false);
-        openMap();
-    }
-
-    @Override
-    protected void openMap() {
-        if (map == null || map.isClosed()) {
-            map = storage.openBTreeMap(BTreeSyncBTest.class.getSimpleName(), ValueInt.type, ValueString.type, null);
-        }
+        openStorage();
+        map = storage.openBTreeMap(BTreeSyncBTest.class.getSimpleName(), ValueInt.type, ValueString.type, null);
     }
 }

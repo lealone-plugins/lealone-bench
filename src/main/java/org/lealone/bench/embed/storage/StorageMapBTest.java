@@ -18,6 +18,7 @@ import org.lealone.storage.aose.AOStorage;
 import org.lealone.storage.aose.AOStorageBuilder;
 import org.lealone.storage.aose.btree.BTreeMap;
 import org.lealone.storage.aose.btree.page.Page;
+import org.lealone.storage.page.PageOperationHandlerFactory;
 
 public abstract class StorageMapBTest extends EmbeddedBTest {
 
@@ -30,8 +31,10 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     int[] conflictKeys = getConflictKeys();
     boolean testConflictOnly;
 
+    PageOperationHandlerFactory pohFactory;
+
     protected StorageMapBTest() {
-        this(200 * 10000);
+        this(1 * 10000);
     }
 
     protected StorageMapBTest(int rowCount) {
@@ -58,10 +61,12 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
 
     @Override
     public void run() {
-        threadCount = 1;
         init();
-        loopCount = 10;
+        createData();
+
+        loopCount = 5;
         int availableProcessors = Runtime.getRuntime().availableProcessors();
+
         threadCount = availableProcessors;
         run0();
 
@@ -87,15 +92,14 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         loop();
     }
 
-    protected void beforeRun() {
+    protected void createData() {
         // map.clear();
         if (map.isEmpty())
             singleThreadSerialWrite();// 先生成初始数据
-        // System.out.println("map size: " + map.size());
+    }
 
-        // singleThreadRandomWrite();
-        // multiThreadsRandomRead(0);
-        // multiThreadsSerialWrite(0);
+    protected void beforeRun() {
+        // System.out.println("map size: " + map.size());
     }
 
     private void loop() {
@@ -106,9 +110,9 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
                 testWrite(i);
                 testRead(i);
             }
-            // testConflict(i);
+            testConflict(i);
 
-            System.out.println();
+            // System.out.println();
         }
         long t2 = System.currentTimeMillis();
         System.out.println("total time: " + (t2 - t1) + " ms");
@@ -135,24 +139,18 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     }
 
     @Override
-    protected void init() {
-        if (!inited.compareAndSet(false, true))
-            return;
-        initConfig();
-        openStorage(true);
-        openMap();
-    }
+    protected abstract void init();
 
     protected void initConfig() {
         String factoryType = "RoundRobin";
-        factoryType = "Random";
+        // factoryType = "Random";
         // factoryType = "LoadBalance";
         config.put("page_operation_handler_factory_type", factoryType);
         config.put("page_operation_handler_count", threadCount + "");
     }
 
-    protected void openStorage(boolean stopHandlers) {
-        AOStorageBuilder builder = new AOStorageBuilder(config);
+    protected void openStorage() {
+        AOStorageBuilder builder = new AOStorageBuilder(config, pohFactory);
         storagePath = joinDirs("lealone", "aose");
         int pageSplitSize = 16 * 1024;
         pageSplitSize = 2 * 1024;
@@ -165,11 +163,6 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         // pageSplitSize = 512 * 1024;
         builder.storagePath(storagePath).compress().reuseSpace().pageSplitSize(pageSplitSize).minFillRate(30);
         storage = builder.openStorage();
-        if (stopHandlers)
-            storage.getPageOperationHandlerFactory().stopHandlers();
-    }
-
-    protected void openMap() {
     }
 
     void testSystemArraycopy() {
@@ -448,7 +441,6 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         else
             printResult(loop, ", row count: " + rowCount + ", thread count: " + threadCount + ", sync " + str
                     + ", total time: " + totalTime + " ms, avg time: " + avgTime + " ms");
-
     }
 
     void testConflict(int loop, boolean async) {

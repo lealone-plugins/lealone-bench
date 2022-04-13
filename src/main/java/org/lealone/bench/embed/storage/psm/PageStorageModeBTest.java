@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package org.lealone.bench.embed.storage;
+package org.lealone.bench.embed.storage.psm;
 
 import org.lealone.bench.embed.AOStorageUtil;
 import org.lealone.bench.embed.TestBase;

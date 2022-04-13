@@ -32,7 +32,7 @@ public class H2MVMapBTest extends StorageMapBTest {
     }
 
     @Override
-    protected void beforeRun() {
+    protected void createData() {
         // map.clear();
         if (map.isEmpty())
             singleThreadSerialWrite();
