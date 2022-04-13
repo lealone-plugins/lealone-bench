@@ -7,7 +7,7 @@ package org.lealone.bench.embed.storage;
 
 import org.lealone.db.value.ValueInt;
 import org.lealone.db.value.ValueString;
-import org.lealone.storage.memory.MemoryStorage;
+import org.lealone.plugins.memory.MemoryStorage;
 
 public class SkipListBTest extends StorageMapBTest {
 

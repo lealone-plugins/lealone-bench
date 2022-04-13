@@ -23,7 +23,6 @@ import org.lealone.db.PluginManager;
 import org.lealone.db.SysProperties;
 import org.lealone.p2p.config.Config;
 import org.lealone.storage.fs.FileUtils;
-import org.lealone.storage.memory.MemoryStorageEngine;
 import org.lealone.transaction.TransactionEngine;
 import org.lealone.transaction.aote.log.LogSyncService;
 
@@ -230,7 +229,7 @@ public class TestBase {
         StringBuilder url = new StringBuilder(100);
 
         url.append(Constants.URL_PREFIX);
-        if (inMemory || MemoryStorageEngine.NAME.equalsIgnoreCase(storageEngineName)) {
+        if (inMemory) {
             addConnectionParameter(DbSetting.PERSISTENT, "false");
         }
 

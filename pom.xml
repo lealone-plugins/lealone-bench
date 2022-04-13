@@ -25,6 +25,11 @@
         </dependency>
         <dependency>
             <groupId>org.lealone</groupId>
+            <artifactId>lealone-memory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lealone</groupId>
             <artifactId>lealone-mysql</artifactId>
             <version>${project.version}</version>
         </dependency>
