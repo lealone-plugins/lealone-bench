@@ -30,6 +30,14 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     int[] conflictKeys = getConflictKeys();
     boolean testConflictOnly;
 
+    protected StorageMapBTest() {
+        this(200 * 10000);
+    }
+
+    protected StorageMapBTest(int rowCount) {
+        super(rowCount);
+    }
+
     protected void testWrite(int loop) {
         // singleThreadRandomWrite();
         // singleThreadSerialWrite();
@@ -40,7 +48,6 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     protected void testRead(int loop) {
         // singleThreadRandomRead();
         // singleThreadSerialRead();
-
         multiThreadsRandomRead(loop);
         multiThreadsSerialRead(loop);
     }
@@ -51,9 +58,9 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
 
     @Override
     public void run() {
+        threadCount = 1;
         init();
-        loopCount = 5;
-
+        loopCount = 10;
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         threadCount = availableProcessors;
         run0();
@@ -81,8 +88,9 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     }
 
     protected void beforeRun() {
-        map.clear();
-        singleThreadSerialWrite();// 先生成初始数据
+        // map.clear();
+        if (map.isEmpty())
+            singleThreadSerialWrite();// 先生成初始数据
         // System.out.println("map size: " + map.size());
 
         // singleThreadRandomWrite();
@@ -98,7 +106,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
                 testWrite(i);
                 testRead(i);
             }
-            testConflict(i);
+            // testConflict(i);
 
             System.out.println();
         }
@@ -140,15 +148,17 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         factoryType = "Random";
         // factoryType = "LoadBalance";
         config.put("page_operation_handler_factory_type", factoryType);
-        config.put("page_operation_handler_count", (threadCount + 1) + "");
+        config.put("page_operation_handler_count", threadCount + "");
     }
 
     protected void openStorage(boolean stopHandlers) {
         AOStorageBuilder builder = new AOStorageBuilder(config);
         storagePath = joinDirs("lealone", "aose");
         int pageSplitSize = 16 * 1024;
-        // pageSplitSize = 2 * 1024;
-        // pageSplitSize = 4 * 1024;
+        pageSplitSize = 2 * 1024;
+        pageSplitSize = 4 * 1024; // 最优
+        // pageSplitSize = 6 * 1024;
+        // pageSplitSize = 8 * 1024;
         // pageSplitSize = 1 * 1024;
         // pageSplitSize = 1024 / 2 / 2;
         // pageSplitSize = 32 * 1024;
@@ -408,14 +418,6 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
 
     void multiThreadsRandomWrite(int loop) {
         multiThreads(loop, false, true, false);
-    }
-
-    void multiThreadsSerialReadAsync(int loop) {
-        multiThreads(loop, true, false, true);
-    }
-
-    void multiThreadsRandomReadAsync(int loop) {
-        multiThreads(loop, true, true, true);
     }
 
     void multiThreadsSerialWriteAsync(int loop) {

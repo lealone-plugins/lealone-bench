@@ -99,10 +99,10 @@ public abstract class BenchTest {
         return DriverManager.getConnection(url, info);
     }
 
-    protected static final int DEFAULT_ROW_COUNT = 10000;
+    protected static final int DEFAULT_ROW_COUNT = 1 * 10000;
     protected int loopCount = 30; // 重复测试次数
     protected int rowCount = DEFAULT_ROW_COUNT; // 总记录数
-    protected int threadCount = Runtime.getRuntime().availableProcessors() + 1;
+    protected int threadCount = Runtime.getRuntime().availableProcessors();
     protected final AtomicLong pendingOperations = new AtomicLong(0);
     protected final AtomicLong startTime = new AtomicLong(0);
     protected final AtomicLong endTime = new AtomicLong(0);
@@ -110,7 +110,7 @@ public abstract class BenchTest {
     protected final int[] randomKeys;
     protected Boolean isRandom;
     protected Boolean write;
-    private CountDownLatch latch;
+    protected CountDownLatch latch;
 
     protected BenchTest() {
         this(DEFAULT_ROW_COUNT);
@@ -222,6 +222,8 @@ public abstract class BenchTest {
     }
 
     protected void notifyOperationComplete() {
+        if (latch == null)
+            return;
         if (pendingOperations.decrementAndGet() <= 0) {
             endTime.set(System.currentTimeMillis());
             latch.countDown();

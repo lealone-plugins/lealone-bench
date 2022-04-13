@@ -8,10 +8,10 @@ package org.lealone.bench.embed.storage;
 import org.lealone.db.value.ValueInt;
 import org.lealone.db.value.ValueString;
 
-public class SyncBTreeBTest extends StorageMapBTest {
+public class BTreeSyncBTest extends StorageMapBTest {
 
     public static void main(String[] args) throws Exception {
-        new SyncBTreeBTest().run();
+        new BTreeSyncBTest().run();
     }
 
     @Override
@@ -26,7 +26,7 @@ public class SyncBTreeBTest extends StorageMapBTest {
     @Override
     protected void openMap() {
         if (map == null || map.isClosed()) {
-            map = storage.openBTreeMap(SyncBTreeBTest.class.getSimpleName(), ValueInt.type, ValueString.type, null);
+            map = storage.openBTreeMap(BTreeSyncBTest.class.getSimpleName(), ValueInt.type, ValueString.type, null);
         }
     }
 }

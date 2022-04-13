@@ -13,8 +13,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.lealone.common.logging.ConsoleLogDelegateFactory;
 import org.lealone.common.logging.LoggerFactory;
+import org.lealone.common.logging.impl.ConsoleLoggerFactory;
 import org.lealone.common.trace.TraceSystem;
 import org.lealone.db.ConnectionSetting;
 import org.lealone.db.Constants;
@@ -60,7 +60,7 @@ public class TestBase {
 
     // 测试阶段使用ConsoleLog能加快启动速度，比logback快
     public static void setConsoleLoggerFactory() {
-        System.setProperty(LoggerFactory.LOGGER_DELEGATE_FACTORY_CLASS_NAME, ConsoleLogDelegateFactory.class.getName());
+        System.setProperty(LoggerFactory.LOGGER_FACTORY_CLASS_NAME, ConsoleLoggerFactory.class.getName());
     }
 
     public static String getDefaultStorageEngineName() {
