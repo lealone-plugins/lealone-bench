@@ -70,7 +70,7 @@ public class LealoneTransactionBTest extends TransactionBTest {
     private void createPageOperationHandlers() {
         handlers = new DefaultPageOperationHandler[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            handlers[i] = new DefaultPageOperationHandler(i, config);
+            handlers[i] = new DefaultPageOperationHandler(i, threadCount, config);
         }
         PageOperationHandlerFactory f = PageOperationHandlerFactory.create(config, handlers);
         f.startHandlers();

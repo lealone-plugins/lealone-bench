@@ -5,7 +5,6 @@
  */
 package org.lealone.bench.embed.storage;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.lealone.db.value.ValueInt;
@@ -61,39 +60,10 @@ public class BTreeAsyncBTest extends StorageMapBTest {
                 null);
     }
 
-    @Override
-    protected void createData() {
-        if (map.isEmpty()) {
-            int t = threadCount;
-            threadCount = 1;
-            createPageOperationHandlers();
-            threadCount = t;
-            singleThreadSerialWrite();// 先生成初始数据
-        }
-    }
-
-    @Override
-    void singleThreadSerialWrite() {
-        CountDownLatch latch = new CountDownLatch(rowCount);
-        long t1 = System.currentTimeMillis();
-        for (int i = 0; i < rowCount; i++) {
-            map.put(i, "valueaaa", ar -> {
-                latch.countDown();
-            });
-        }
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        long t2 = System.currentTimeMillis();
-        printResult("single-thread serial write time: " + (t2 - t1) + " ms, count: " + rowCount);
-    }
-
     private void createPageOperationHandlers() {
         DefaultPageOperationHandler[] handlers = new DefaultPageOperationHandler[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            handlers[i] = new DefaultPageOperationHandler(i + 1, config);
+            handlers[i] = new DefaultPageOperationHandler(i, threadCount, config);
         }
         if (pohFactory != null) {
             pohFactory.stopHandlers();

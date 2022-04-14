@@ -34,7 +34,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     PageOperationHandlerFactory pohFactory;
 
     protected StorageMapBTest() {
-        this(1 * 10000);
+        this(200 * 10000);
     }
 
     protected StorageMapBTest(int rowCount) {
@@ -64,7 +64,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         init();
         createData();
 
-        loopCount = 5;
+        loopCount = 10;
         int availableProcessors = Runtime.getRuntime().availableProcessors();
 
         threadCount = availableProcessors;
@@ -84,7 +84,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         threadCount = availableProcessors;
         loopCount = 100 / threadCount;
         testConflictOnly = true;
-        run0();
+        // run0();
     }
 
     private void run0() {
@@ -110,9 +110,9 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
                 testWrite(i);
                 testRead(i);
             }
-            testConflict(i);
+            // testConflict(i);
 
-            // System.out.println();
+            System.out.println();
         }
         long t2 = System.currentTimeMillis();
         System.out.println("total time: " + (t2 - t1) + " ms");
