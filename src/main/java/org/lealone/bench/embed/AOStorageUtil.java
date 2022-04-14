@@ -31,7 +31,7 @@ public class AOStorageUtil {
     public static AOStorage openStorage(AOStorageBuilder builder) {
         String storagePath = TestBase.joinDirs("aose");
         builder.compressHigh();
-        builder.storagePath(storagePath).reuseSpace().minFillRate(30);
+        builder.storagePath(storagePath).minFillRate(30);
         AOStorage storage = builder.openStorage();
         return storage;
     }

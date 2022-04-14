@@ -52,7 +52,7 @@ public class LealoneTransactionBTest extends TransactionBTest {
         AOStorageBuilder builder = new AOStorageBuilder(config);
         storagePath = joinDirs("lealone", "aose");
         int pageSplitSize = 16 * 1024;
-        builder.storagePath(storagePath).compress().reuseSpace().pageSplitSize(pageSplitSize).minFillRate(30);
+        builder.storagePath(storagePath).compress().pageSplitSize(pageSplitSize).minFillRate(30);
         storage = builder.openStorage();
 
         initTransactionEngineConfig(config);

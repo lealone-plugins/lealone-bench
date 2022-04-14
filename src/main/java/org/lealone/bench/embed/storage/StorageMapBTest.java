@@ -161,7 +161,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         // pageSplitSize = 1024 / 2 / 2;
         // pageSplitSize = 32 * 1024;
         // pageSplitSize = 512 * 1024;
-        builder.storagePath(storagePath).compress().reuseSpace().pageSplitSize(pageSplitSize).minFillRate(30);
+        builder.storagePath(storagePath).compress().pageSplitSize(pageSplitSize).minFillRate(30);
         storage = builder.openStorage();
     }
 
