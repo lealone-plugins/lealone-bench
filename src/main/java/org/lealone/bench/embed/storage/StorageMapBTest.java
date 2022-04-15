@@ -42,17 +42,17 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     }
 
     protected void testWrite(int loop) {
-        // singleThreadRandomWrite();
-        // singleThreadSerialWrite();
-        multiThreadsRandomWrite(loop);
-        multiThreadsSerialWrite(loop);
+        singleThreadRandomWrite();
+        singleThreadSerialWrite();
+        // multiThreadsRandomWrite(loop);
+        // multiThreadsSerialWrite(loop);
     }
 
     protected void testRead(int loop) {
-        // singleThreadRandomRead();
-        // singleThreadSerialRead();
-        multiThreadsRandomRead(loop);
-        multiThreadsSerialRead(loop);
+        singleThreadRandomRead();
+        singleThreadSerialRead();
+        // multiThreadsRandomRead(loop);
+        // multiThreadsSerialRead(loop);
     }
 
     protected void testConflict(int loop) {
@@ -300,7 +300,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
             put(randomKeys[i], "valueaaa");
         }
         long t2 = System.currentTimeMillis();
-        printResult("single-thread random write time: " + (t2 - t1) + " ms, count: " + map.size());
+        printResult("single-thread random write time: " + (t2 - t1) + " ms, count: " + rowCount);
     }
 
     void singleThreadSerialRead() {
