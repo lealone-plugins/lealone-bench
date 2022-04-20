@@ -64,7 +64,7 @@ public class LealoneEmbeddedSqlBTest extends SqlBenchTest {
         handlers = new Scheduler[threadCount];
         HashMap<String, String> config = new HashMap<>();
         for (int i = 0; i < threadCount; i++) {
-            handlers[i] = new Scheduler(i, config);
+            handlers[i] = new Scheduler(i, threadCount, config);
             handlers[i].start();
         }
         PageOperationHandlerFactory.create(null, handlers);
