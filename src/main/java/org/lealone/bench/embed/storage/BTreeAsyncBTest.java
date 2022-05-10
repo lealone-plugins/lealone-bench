@@ -20,6 +20,9 @@ import org.lealone.storage.page.PageOperationHandlerFactory;
 public class BTreeAsyncBTest extends StorageMapBTest {
 
     public static void main(String[] args) throws Exception {
+        // 禁用com.mysql.cj.jdbc.AbandonedConnectionCleanupThread
+        System.setProperty("com.mysql.cj.disableAbandonedConnectionCleanup", "true");
+
         new BTreeAsyncBTest().run();
     }
 
