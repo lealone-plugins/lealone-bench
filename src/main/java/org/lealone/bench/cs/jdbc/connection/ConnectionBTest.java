@@ -12,8 +12,9 @@ import org.lealone.bench.cs.ClientServerBTest;
 //测试创建jdbc connection的性能
 public abstract class ConnectionBTest extends ClientServerBTest {
 
-    private final int connectionCount = 1000;
+    private final int connectionCount = 100;
 
+    @Override
     protected abstract Connection getConnection() throws Exception;
 
     @Override

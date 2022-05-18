@@ -111,13 +111,23 @@ public abstract class ClientServerBTest extends BenchTest {
         return getConnection(url, "sa", "");
     }
 
-    public static Connection getLealoneConnection() throws Exception {
+    public static String getLealoneUrl() {
         String url = "jdbc:lealone:tcp://localhost:" + Constants.DEFAULT_TCP_PORT + "/lealone";
         url += "?" + ConnectionSetting.NETWORK_TIMEOUT + "=" + Integer.MAX_VALUE;
+        return url;
+    }
+
+    public static Connection getLealoneConnection() throws Exception {
+        String url = getLealoneUrl();
         url += "&" + ConnectionSetting.IS_SHARED + "=false";
-        Connection conn = getConnection(url, "root", "");
-        // conn= getConnection(PgServer.DEFAULT_PORT);
-        return conn;
+        return getConnection(url, "root", "");
+    }
+
+    public static Connection getLealoneSharedConnection(int maxSharedSize) throws Exception {
+        String url = getLealoneUrl();
+        url += "&" + ConnectionSetting.IS_SHARED + "=true";
+        url += "&" + ConnectionSetting.MAX_SHARED_SIZE + "=" + maxSharedSize;
+        return getConnection(url, "root", "");
     }
 
     public static Connection getLealonePgConnection() throws Exception {

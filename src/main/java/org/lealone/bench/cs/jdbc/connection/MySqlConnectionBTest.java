@@ -15,6 +15,6 @@ public class MySqlConnectionBTest extends ConnectionBTest {
 
     @Override
     protected Connection getConnection() throws Exception {
-        return getMySqlConnection();
+        return org.lealone.bench.cs.ClientServerBTest.getMySQLConnection();
     }
 }

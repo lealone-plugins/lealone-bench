@@ -7,14 +7,14 @@ package org.lealone.bench.cs.jdbc.connection;
 
 import java.sql.Connection;
 
-public class LealoneConnectionBTest extends ConnectionBTest {
+public class PgSqlConnectionBTest extends ConnectionBTest {
 
     public static void main(String[] args) throws Exception {
-        new LealoneConnectionBTest().run();
+        new PgSqlConnectionBTest().run();
     }
 
     @Override
     protected Connection getConnection() throws Exception {
-        return getLealoneSharedConnection(10);
+        return org.lealone.bench.cs.ClientServerBTest.getPgConnection();
     }
 }
