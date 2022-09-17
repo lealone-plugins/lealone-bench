@@ -19,7 +19,7 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
 
     protected int loop = 100;
     protected int sqlCountPerLoop = 500;
-    protected int threadCount = 8;
+    /// protected int threadCount = 20;
     protected boolean async;
 
     public void start() {
@@ -121,7 +121,8 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
                 }
                 latch.await();
                 long t2 = System.nanoTime();
-                System.out.println(getBTestName() + ": " + TimeUnit.NANOSECONDS.toMicros(t2 - t1) / sqlCountPerLoop);
+                System.out.println(getBTestName() + ": "
+                        + TimeUnit.NANOSECONDS.toMicros(t2 - t1) / sqlCountPerLoop);
             }
             System.out.println();
             System.out.println("time: 微秒");
@@ -134,7 +135,8 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
                 for (int i = 0; i < sqlCountPerLoop; i++)
                     statement.executeUpdate(nextSql());
                 long t2 = System.nanoTime();
-                System.out.println(getBTestName() + ": " + TimeUnit.NANOSECONDS.toMicros(t2 - t1) / sqlCountPerLoop);
+                System.out.println(getBTestName() + ": "
+                        + TimeUnit.NANOSECONDS.toMicros(t2 - t1) / sqlCountPerLoop);
             }
             System.out.println();
             System.out.println("time: 微秒");

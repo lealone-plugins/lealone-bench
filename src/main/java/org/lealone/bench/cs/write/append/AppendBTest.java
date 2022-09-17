@@ -12,19 +12,23 @@ import org.lealone.bench.cs.write.ClientServerWriteBTest;
 
 public abstract class AppendBTest extends ClientServerWriteBTest {
 
-    private int rowCount = loop * sqlCountPerLoop * threadCount;
-    private String[] sqls = new String[rowCount];
+    private String[] sqls;
+
+    public AppendBTest() {
+        threadCount = 20;
+        rowCount = loop * sqlCountPerLoop * threadCount;
+        sqls = new String[rowCount];
+    }
 
     @Override
     protected void init() throws Exception {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
-        statement.executeUpdate("drop table if exists AppendBTest");
-        String sql = "create table if not exists AppendBTest(f1 int, f2 int)";
+        statement.executeUpdate("drop table if exists test");
+        String sql = "create table if not exists test(name varchar(20), f1 int, f2 int)";
         statement.executeUpdate(sql);
-
         for (int i = 1; i <= rowCount; i++) {
-            sqls[i - 1] = "insert into AppendBTest values(" + i + ",1)";
+            sqls[i - 1] = "insert into test values('n" + i + "'," + i + "," + (i * 10) + ")";
         }
         close(statement, conn);
     }

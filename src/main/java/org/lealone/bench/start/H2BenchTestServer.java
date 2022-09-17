@@ -44,6 +44,7 @@ public class H2BenchTestServer {
     }
 
     public static void setH2Properties() {
+        System.setProperty("h2.queryCacheSize", "0");
         // System.setProperty("DATABASE_TO_UPPER", "false");
         System.setProperty("h2.lobInDatabase", "false");
         System.setProperty("h2.lobClientMaxSizeMemory", "1024");
