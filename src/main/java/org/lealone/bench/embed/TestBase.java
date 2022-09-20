@@ -21,7 +21,7 @@ import org.lealone.db.Constants;
 import org.lealone.db.DbSetting;
 import org.lealone.db.PluginManager;
 import org.lealone.db.SysProperties;
-import org.lealone.p2p.config.Config;
+import org.lealone.main.config.Config;
 import org.lealone.storage.fs.FileUtils;
 import org.lealone.transaction.TransactionEngine;
 import org.lealone.transaction.aote.log.LogSyncService;
@@ -30,7 +30,8 @@ public class TestBase {
 
     public static String url;
     public static final String DEFAULT_STORAGE_ENGINE_NAME = getDefaultStorageEngineName();
-    public static final String TEST_BASE_DIR = "." + File.separatorChar + "target" + File.separatorChar + "test-data";
+    public static final String TEST_BASE_DIR = "." + File.separatorChar + "target" + File.separatorChar
+            + "test-data";
     public static final String TEST_DIR = TEST_BASE_DIR + File.separatorChar + "test";
     public static final String TEST = "test";
     public static final String LEALONE = "lealone";
@@ -59,7 +60,8 @@ public class TestBase {
 
     // 测试阶段使用ConsoleLog能加快启动速度，比logback快
     public static void setConsoleLoggerFactory() {
-        System.setProperty(LoggerFactory.LOGGER_FACTORY_CLASS_NAME, ConsoleLoggerFactory.class.getName());
+        System.setProperty(LoggerFactory.LOGGER_FACTORY_CLASS_NAME,
+                ConsoleLoggerFactory.class.getName());
     }
 
     public static String getDefaultStorageEngineName() {
@@ -68,7 +70,8 @@ public class TestBase {
 
     public static synchronized void initTransactionEngine() {
         if (te == null) {
-            te = PluginManager.getPlugin(TransactionEngine.class, Constants.DEFAULT_TRANSACTION_ENGINE_NAME);
+            te = PluginManager.getPlugin(TransactionEngine.class,
+                    Constants.DEFAULT_TRANSACTION_ENGINE_NAME);
 
             Map<String, String> config = new HashMap<>();
             config.put("base_dir", TEST_DIR);
@@ -224,7 +227,8 @@ public class TestBase {
             addConnectionParameter("user", user);
             addConnectionParameter("password", password);
         }
-        addConnectionParameter(ConnectionSetting.NETWORK_TIMEOUT, String.valueOf(NETWORK_TIMEOUT_MILLISECONDS));
+        addConnectionParameter(ConnectionSetting.NETWORK_TIMEOUT,
+                String.valueOf(NETWORK_TIMEOUT_MILLISECONDS));
 
         StringBuilder url = new StringBuilder(100);
 
@@ -252,9 +256,10 @@ public class TestBase {
             separatorChar = '&';
         }
 
-        url.append(dbName).append(firstSeparatorChar).append(DbSetting.DEFAULT_STORAGE_ENGINE).append("=")
-                .append(storageEngineName);
-        url.append(firstSeparatorChar).append(Constants.NET_FACTORY_NAME_KEY).append("=").append(netFactoryName);
+        url.append(dbName).append(firstSeparatorChar).append(DbSetting.DEFAULT_STORAGE_ENGINE)
+                .append("=").append(storageEngineName);
+        url.append(firstSeparatorChar).append(Constants.NET_FACTORY_NAME_KEY).append("=")
+                .append(netFactoryName);
 
         for (Map.Entry<String, String> e : connectionParameters.entrySet())
             url.append(separatorChar).append(e.getKey()).append('=').append(e.getValue());
@@ -285,7 +290,8 @@ public class TestBase {
     public static void deleteFileRecursive(String path) {
         // 避免误删除
         if (!path.startsWith(TEST_BASE_DIR)) {
-            throw new RuntimeException("invalid path: " + path + ", must be start with: " + TEST_BASE_DIR);
+            throw new RuntimeException(
+                    "invalid path: " + path + ", must be start with: " + TEST_BASE_DIR);
         }
         FileUtils.deleteRecursive(path, false);
     }
