@@ -10,6 +10,8 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
 
 import org.lealone.client.jdbc.JdbcStatement;
@@ -20,13 +22,13 @@ import org.lealone.client.jdbc.JdbcStatement;
 public class VirtualThreadBTest {
 
     public static void main(String[] args) throws Exception {
-        // Connection conn = org.lealone.bench.cs.ClientServerBTest.getH2Connection();
-        Connection conn = org.lealone.bench.cs.ClientServerBTest.getLealoneConnection();
+        Connection conn = org.lealone.bench.cs.ClientServerBTest.getH2Connection();
+        // Connection conn = org.lealone.bench.cs.ClientServerBTest.getLealoneConnection();
         Statement stmt = conn.createStatement();
         // init(stmt);
 
         for (int i = 0; i < 50; i++) {
-            insertAsync(stmt, 500);
+            insertVirtualThread(stmt, 500);
         }
 
         // query(stmt);
@@ -123,7 +125,7 @@ public class VirtualThreadBTest {
         }
         long t2 = System.currentTimeMillis();
         System.out.println("time: " + ((t2 - t1) / count) + "ms");
-        System.out.println("time: " + ((t2 - t1) * 1000 / count) + "μs");
+        // System.out.println("time: " + ((t2 - t1) * 1000 / count) + "μs");
     }
 
     public static void main2(String[] args) {
@@ -135,6 +137,44 @@ public class VirtualThreadBTest {
                 });
             });
         }
+    }
 
+    public static void testLock() throws Exception {
+        // Object lock = new Object();
+        final ReentrantLock rl = new ReentrantLock();
+        ThreadFactory factory = Thread.ofVirtual().name("vt-", 1).factory();
+        try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
+            executor.submit(() -> {
+                int i = 0;
+                // synchronized (lock) { //会挂起系统线程
+                // i++;
+                // }
+
+                rl.lock(); // 不会挂起系统线程
+                i++;
+                rl.unlock();
+                System.out.println("a: " + i);
+            });
+
+            executor.submit(() -> {
+                int i = 0;
+                // synchronized (lock) {
+                // i++;
+                // }
+
+                rl.lock();
+                i++;
+                rl.unlock();
+                System.out.println("b: " + i);
+            });
+
+            for (int i = 0; i < 50; i++) {
+                final int i2 = i;
+                executor.submit(() -> {
+                    System.out.println(i2);
+                });
+            }
+        }
+        System.out.println("main end");
     }
 }
