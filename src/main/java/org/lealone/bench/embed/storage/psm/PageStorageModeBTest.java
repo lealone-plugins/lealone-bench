@@ -5,13 +5,10 @@
  */
 package org.lealone.bench.embed.storage.psm;
 
-import org.lealone.bench.embed.AOStorageUtil;
-import org.lealone.bench.embed.TestBase;
 import org.lealone.db.index.standard.ValueDataType;
 import org.lealone.db.index.standard.VersionedValue;
 import org.lealone.db.index.standard.VersionedValueType;
 import org.lealone.db.value.Value;
-import org.lealone.db.value.ValueArray;
 import org.lealone.db.value.ValueLong;
 import org.lealone.db.value.ValueString;
 import org.lealone.storage.CursorParameters;
@@ -20,6 +17,8 @@ import org.lealone.storage.StorageMapCursor;
 import org.lealone.storage.aose.AOStorage;
 import org.lealone.storage.aose.btree.BTreeMap;
 import org.lealone.storage.aose.btree.page.PageStorageMode;
+import org.lealone.test.TestBase;
+import org.lealone.test.aose.AOStorageTest;
 import org.lealone.transaction.aote.TransactionalValue;
 import org.lealone.transaction.aote.TransactionalValueType;
 
@@ -32,13 +31,12 @@ public class PageStorageModeBTest extends TestBase {
 
     int rowCount = 6000;
     int columnCount = 10;
-    int pageSplitSize = 1024 * 1024;
+    int pageSize = 1024 * 1024;
     int cacheSize = 100 * 1024 * 1024; // 100M
 
     public void run() {
         ValueDataType keyType = new ValueDataType(null, null, null);
-        ValueDataType valueType = new ValueDataType(null, null, null);
-        VersionedValueType vvType = new VersionedValueType(valueType, columnCount);
+        VersionedValueType vvType = new VersionedValueType(null, null, null, columnCount);
         TransactionalValueType tvType = new TransactionalValueType(vvType);
 
         for (int i = 0; i < 10; i++) {
@@ -69,7 +67,7 @@ public class PageStorageModeBTest extends TestBase {
                     // }
                 }
                 // System.out.println(Arrays.asList(columns));
-                VersionedValue vv = new VersionedValue(row, ValueArray.get(columns));
+                VersionedValue vv = new VersionedValue(row, columns);
                 TransactionalValue tv = TransactionalValue.createCommitted(vv);
                 map.put(key, tv);
             }
@@ -81,8 +79,9 @@ public class PageStorageModeBTest extends TestBase {
     void testRowStorage(ValueDataType keyType, TransactionalValueType tvType) {
         long t0 = System.currentTimeMillis();
         long t1 = System.currentTimeMillis();
-        AOStorage storage = AOStorageUtil.openStorage(pageSplitSize, cacheSize);
-        BTreeMap<ValueLong, TransactionalValue> map = storage.openBTreeMap("testRowStorage", keyType, tvType, null);
+        AOStorage storage = AOStorageTest.openStorage(pageSize, cacheSize);
+        BTreeMap<ValueLong, TransactionalValue> map = storage.openBTreeMap("testRowStorage", keyType,
+                tvType, null);
         map.setPageStorageMode(PageStorageMode.ROW_STORAGE);
         putData(map);
         long t2 = System.currentTimeMillis();
@@ -93,21 +92,20 @@ public class PageStorageModeBTest extends TestBase {
         int columnIndex = 2; // 索引要从0开始算
         TransactionalValue tv = map.get(key);
         VersionedValue vv = (VersionedValue) tv.getValue();
-        System.out.println(vv.value.getList()[columnIndex]);
+        System.out.println(vv.columns[columnIndex]);
         t1 = System.currentTimeMillis();
         key = ValueLong.get(2999);
         tv = map.get(key);
         vv = (VersionedValue) tv.getValue();
         t2 = System.currentTimeMillis();
         System.out.println("RowStorage get time: " + (t2 - t1) + " ms");
-        System.out.println(vv.value.getList()[columnIndex]);
+        System.out.println(vv.columns[columnIndex]);
 
         int rows = 0;
         ValueLong from = ValueLong.get(2000);
         t1 = System.currentTimeMillis();
         StorageMapCursor<ValueLong, TransactionalValue> cursor = map.cursor(from);
-        while (cursor.hasNext()) {
-            cursor.next();
+        while (cursor.next()) {
             rows++;
         }
         t2 = System.currentTimeMillis();
@@ -120,8 +118,9 @@ public class PageStorageModeBTest extends TestBase {
     void testColumnStorage(ValueDataType keyType, TransactionalValueType tvType) {
         long t0 = System.currentTimeMillis();
         long t1 = System.currentTimeMillis();
-        AOStorage storage = AOStorageUtil.openStorage(pageSplitSize);
-        BTreeMap<ValueLong, TransactionalValue> map = storage.openBTreeMap("testColumnStorage", keyType, tvType, null);
+        AOStorage storage = AOStorageTest.openStorage(pageSize);
+        BTreeMap<ValueLong, TransactionalValue> map = storage.openBTreeMap("testColumnStorage", keyType,
+                tvType, null);
         map.setPageStorageMode(PageStorageMode.COLUMN_STORAGE);
         putData(map);
         long t2 = System.currentTimeMillis();
@@ -137,14 +136,14 @@ public class PageStorageModeBTest extends TestBase {
         int columnIndex = 2; // 索引要从0开始算
         TransactionalValue tv = map.get(key, columnIndex);
         VersionedValue vv = (VersionedValue) tv.getValue();
-        System.out.println(vv.value.getList()[columnIndex]);
+        System.out.println(vv.columns[columnIndex]);
         t1 = System.currentTimeMillis();
         key = ValueLong.get(2999);
         tv = map.get(key, columnIndex);
         vv = (VersionedValue) tv.getValue();
         t2 = System.currentTimeMillis();
         System.out.println("ColumnStorage get time: " + (t2 - t1) + " ms");
-        System.out.println(vv.value.getList()[columnIndex]);
+        System.out.println(vv.columns[columnIndex]);
 
         // key = ValueLong.get(2000);
         // tv = map.get(key, columnIndex);
@@ -154,9 +153,9 @@ public class PageStorageModeBTest extends TestBase {
         int rows = 0;
         ValueLong from = ValueLong.get(2000);
         t1 = System.currentTimeMillis();
-        StorageMapCursor<ValueLong, TransactionalValue> cursor = map.cursor(CursorParameters.create(from, columnIndex));
-        while (cursor.hasNext()) {
-            cursor.next();
+        StorageMapCursor<ValueLong, TransactionalValue> cursor = map
+                .cursor(CursorParameters.create(from, columnIndex));
+        while (cursor.next()) {
             rows++;
         }
         t2 = System.currentTimeMillis();

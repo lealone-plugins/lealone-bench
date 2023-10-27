@@ -12,43 +12,48 @@ import org.lealone.bench.cs.write.ClientServerWriteBTest;
 
 public abstract class AppendBTest extends ClientServerWriteBTest {
 
-    private String[] sqls;
-
     public AppendBTest() {
-        threadCount = 20;
-        rowCount = loop * sqlCountPerLoop * threadCount;
-        sqls = new String[rowCount];
+        outerLoop = 15;
+        threadCount = 48;
+        sqlCountPerInnerLoop = 20;
+        innerLoop = 10;
+        // prepare = true;
     }
 
     @Override
     protected void init() throws Exception {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
-        statement.executeUpdate("drop table if exists test");
-        String sql = "create table if not exists test(name varchar(20), f1 int, f2 int)";
+        statement.executeUpdate("drop table if exists AppendBTest");
+        String sql = "create table if not exists AppendBTest(name varchar(20), f1 int, f2 int)";
         statement.executeUpdate(sql);
-        for (int i = 1; i <= rowCount; i++) {
-            sqls[i - 1] = "insert into test values('n" + i + "'," + i + "," + (i * 10) + ")";
-        }
         close(statement, conn);
     }
 
     @Override
-    protected UpdateThreadBase createUpdateThread(int id, Connection conn) {
+    protected UpdateThreadBase createBTestThread(int id, Connection conn) {
         return new UpdateThread(id, conn);
     }
 
     private class UpdateThread extends UpdateThreadBase {
-        int start;
 
         UpdateThread(int id, Connection conn) {
             super(id, conn);
-            start = loop * sqlCountPerLoop * id;
+            prepareStatement("insert into AppendBTest values(?,?,?)");
         }
 
         @Override
         protected String nextSql() {
-            return sqls[start++];
+            int i = id.incrementAndGet();
+            return "insert into AppendBTest values('n" + i + "'," + i + "," + (i * 10) + ")";
+        }
+
+        @Override
+        protected void prepare() throws Exception {
+            int i = id.incrementAndGet();
+            ps.setString(1, "n" + i);
+            ps.setInt(2, i);
+            ps.setInt(3, i * 10);
         }
     }
 }

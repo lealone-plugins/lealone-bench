@@ -12,39 +12,46 @@ import org.lealone.bench.cs.write.ClientServerWriteBTest;
 
 public abstract class InsertBTest extends ClientServerWriteBTest {
 
-    private int rowCount = loop * sqlCountPerLoop * threadCount;
-    private String[] sqls = new String[rowCount];
+    protected InsertBTest() {
+        outerLoop = 30;
+        threadCount = 48;
+        sqlCountPerInnerLoop = 20;
+        innerLoop = 10;
+        // printInnerLoopResult = true;
+    }
 
     @Override
     protected void init() throws Exception {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
         statement.executeUpdate("drop table if exists InsertBTest");
-        String sql = "create table if not exists InsertBTest(pk int primary key, f1 int)";
+        String sql = "create table if not exists InsertBTest(pk int primary key, f1 int)"
+                + " parameters(page_size='8k')";
+        sql = "create table if not exists InsertBTest(pk int primary key, f1 int)";
         statement.executeUpdate(sql);
-
-        for (int i = 1; i <= rowCount; i++) {
-            sqls[i - 1] = "insert into InsertBTest values(" + i + ",1)";
-        }
         close(statement, conn);
     }
 
     @Override
-    protected UpdateThreadBase createUpdateThread(int id, Connection conn) {
+    protected UpdateThreadBase createBTestThread(int id, Connection conn) {
         return new UpdateThread(id, conn);
     }
 
     private class UpdateThread extends UpdateThreadBase {
-        int start;
 
         UpdateThread(int id, Connection conn) {
             super(id, conn);
-            start = loop * sqlCountPerLoop * id;
+            prepareStatement("insert into InsertBTest values(?,1)");
         }
 
         @Override
         protected String nextSql() {
-            return sqls[start++];
+            return "insert into InsertBTest values(" + id.incrementAndGet() + ",1)";
+        }
+
+        @Override
+        protected void prepare() throws Exception {
+            ps.setInt(1, id.incrementAndGet());
         }
     }
 }

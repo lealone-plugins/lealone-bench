@@ -12,18 +12,20 @@ import org.lealone.bench.cs.write.ClientServerWriteBTest;
 
 public abstract class ColumnLockBTest extends ClientServerWriteBTest {
 
-    private int columnCount = threadCount;
-    private String[] sqls = new String[columnCount];
-    private String[] sqlsWarmUp = new String[columnCount];
+    protected ColumnLockBTest() {
+        sqlCountPerInnerLoop = 50;
+        sqls = new String[threadCount];
+    }
 
     @Override
     protected void init() throws Exception {
+        int columnCount = threadCount;
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
-        statement.executeUpdate("drop table if exists ColumnLockPerfTest");
+        statement.executeUpdate("drop table if exists ColumnLockBTest");
 
         StringBuilder buff = new StringBuilder();
-        buff.append("create table if not exists ColumnLockPerfTest(pk int primary key");
+        buff.append("create table if not exists ColumnLockBTest(pk int primary key");
         for (int i = 1; i <= columnCount; i++) {
             buff.append(",f").append(i).append(" int");
         }
@@ -32,7 +34,7 @@ public abstract class ColumnLockBTest extends ClientServerWriteBTest {
 
         for (int row = 1; row <= 9; row++) {
             buff = new StringBuilder();
-            buff.append("insert into ColumnLockPerfTest values(").append(row);
+            buff.append("insert into ColumnLockBTest values(").append(row);
             for (int i = 1; i <= columnCount; i++) {
                 buff.append(",").append(i * 10);
             }
@@ -41,38 +43,24 @@ public abstract class ColumnLockBTest extends ClientServerWriteBTest {
         }
         for (int i = 1; i <= columnCount; i++) {
             buff = new StringBuilder();
-            buff.append("update ColumnLockPerfTest set f").append(i).append(" = ").append(i * 1000)
+            buff.append("update ColumnLockBTest set f").append(i).append(" = ").append(i * 1000)
                     .append(" where pk=5");
             sqls[i - 1] = buff.toString();
-        }
-        for (int i = 1; i <= columnCount; i++) {
-            buff = new StringBuilder();
-            buff.append("update ColumnLockPerfTest set f").append(i).append(" = ").append(i * 100)
-                    .append(" where pk=5");
-            sqlsWarmUp[i - 1] = buff.toString();
         }
         close(statement, conn);
     }
 
     @Override
-    protected UpdateThreadBase createUpdateThread(int id, Connection conn) {
+    protected UpdateThreadBase createBTestThread(int id, Connection conn) {
         return new UpdateThread(id, conn);
     }
 
     private class UpdateThread extends UpdateThreadBase {
         String sql;
-        String sqlWarmUp;
 
         UpdateThread(int id, Connection conn) {
             super(id, conn);
             this.sql = sqls[id];
-            this.sqlWarmUp = sqlsWarmUp[id];
-        }
-
-        @Override
-        public void warmUp() throws Exception {
-            for (int i = 0; i < sqlCountPerLoop * 2; i++)
-                stmt.executeUpdate(sqlWarmUp);
         }
 
         @Override

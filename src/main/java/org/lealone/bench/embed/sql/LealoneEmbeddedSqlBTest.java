@@ -10,16 +10,15 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.lealone.bench.cs.sql.SqlBenchTest;
-import org.lealone.bench.embed.AMTransactionEngineUtil;
 import org.lealone.client.jdbc.JdbcStatement;
 import org.lealone.db.SysProperties;
 import org.lealone.server.Scheduler;
 import org.lealone.storage.page.PageOperation;
 import org.lealone.storage.page.PageOperationHandlerFactory;
+import org.lealone.test.aote.TransactionEngineTest;
 import org.lealone.transaction.TransactionEngine;
 
-public class LealoneEmbeddedSqlBTest extends SqlBenchTest {
+public class LealoneEmbeddedSqlBTest extends EmbeddedSqlBenchTest {
 
     public static void main(String[] args) throws Exception {
         new LealoneEmbeddedSqlBTest().run();
@@ -50,7 +49,7 @@ public class LealoneEmbeddedSqlBTest extends SqlBenchTest {
         createPageOperationHandlers();
 
         initTransactionEngineConfig(config);
-        te = AMTransactionEngineUtil.getTransactionEngine(config);
+        te = TransactionEngineTest.getTransactionEngine(config);
 
         super.init();
     }
@@ -72,7 +71,7 @@ public class LealoneEmbeddedSqlBTest extends SqlBenchTest {
 
     @Override
     protected Connection getConnection() throws Exception {
-        return getLealoneConnection(true);
+        return getEmbeddedLealoneConnection();
     }
 
     @Override

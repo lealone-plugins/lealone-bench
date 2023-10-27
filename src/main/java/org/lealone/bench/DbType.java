@@ -7,7 +7,9 @@ package org.lealone.bench;
 
 public enum DbType {
     H2,
-    MySQL,
-    PostgreSQL,
-    Lealone
+    MYSQL,
+    POSTGRESQL,
+    LEALONE,
+    LM, // lealone mysql客户端
+    LP // lealone postgresql客户端
 }

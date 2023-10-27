@@ -7,10 +7,9 @@ package org.lealone.bench.embed.sql;
 
 import java.sql.Connection;
 
-import org.lealone.bench.cs.sql.SqlBenchTest;
 import org.lealone.bench.start.H2BenchTestServer;
 
-public class H2EmbeddedSqlBTest extends SqlBenchTest {
+public class H2EmbeddedSqlBTest extends EmbeddedSqlBenchTest {
 
     public static void main(String[] args) throws Exception {
         H2BenchTestServer.setH2Properties();
@@ -19,6 +18,6 @@ public class H2EmbeddedSqlBTest extends SqlBenchTest {
 
     @Override
     protected Connection getConnection() throws Exception {
-        return getH2Connection(true);
+        return getEmbeddedH2Connection();
     }
 }

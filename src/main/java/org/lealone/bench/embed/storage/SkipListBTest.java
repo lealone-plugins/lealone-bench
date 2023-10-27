@@ -5,9 +5,7 @@
  */
 package org.lealone.bench.embed.storage;
 
-import org.lealone.db.value.ValueInt;
-import org.lealone.db.value.ValueString;
-import org.lealone.plugins.memory.MemoryStorage;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public class SkipListBTest extends StorageMapBTest {
 
@@ -15,11 +13,34 @@ public class SkipListBTest extends StorageMapBTest {
         new SkipListBTest().run();
     }
 
+    private ConcurrentSkipListMap<Integer, String> map;
+
     @Override
     protected void init() {
         if (!inited.compareAndSet(false, true))
             return;
-        MemoryStorage ms = new MemoryStorage();
-        map = ms.openMap(SkipListBTest.class.getSimpleName(), ValueInt.type, ValueString.type, null);
+        map = new ConcurrentSkipListMap<>();
+    }
+
+    @Override
+    protected void createData() {
+        // map.clear();
+        if (map.isEmpty())
+            singleThreadSerialWrite();
+    }
+
+    @Override
+    protected int size() {
+        return map.size();
+    }
+
+    @Override
+    protected void put(Integer key, String value) {
+        map.put(key, value);
+    }
+
+    @Override
+    protected String get(Integer key) {
+        return map.get(key);
     }
 }
