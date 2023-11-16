@@ -125,6 +125,7 @@ public abstract class TpccConfig implements TpccConstants {
         return getConfigURL(configUrl);
     }
 
+    @SuppressWarnings("deprecation")
     public static URL getConfigURL(String configUrl) {
         URL url;
         try {
