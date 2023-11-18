@@ -125,7 +125,6 @@ public abstract class TpccConfig implements TpccConstants {
         return getConfigURL(configUrl);
     }
 
-    @SuppressWarnings("deprecation")
     public static URL getConfigURL(String configUrl) {
         URL url;
         try {
@@ -147,12 +146,7 @@ public abstract class TpccConfig implements TpccConstants {
     public static void dumpInformation(String[] argv) {
         logger.info("TPCC version " + VERSION + " Number of Arguments: " + argv.length);
         // dump information about the environment we are running in
-        String sysProp[] = {
-                "os.name",
-                "os.arch",
-                "os.version",
-                "java.runtime.name",
-                "java.vm.version",
+        String sysProp[] = { "os.name", "os.arch", "os.version", "java.runtime.name", "java.vm.version",
                 "java.library.path" };
 
         for (String s : sysProp) {
