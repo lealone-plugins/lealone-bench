@@ -20,23 +20,12 @@ import com.mongodb.reactivestreams.client.MongoClients;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
 
-public abstract class MongodbAsyncBTest {
+public abstract class MongodbAsyncBTest extends DocDatabaseBTest {
 
-    int threadCount = 48;
-    int outerLoop = 30;
-    int innerLoop = 200;
-
-    int clientCount = 2; // 超过cpu核数性能会下降
     MongoClient[] mongoClients;
 
-    void beforeBenchTest() {
-    }
-
-    void afterBenchTest() {
-    }
-
-    void run() {
-        createMongoClients();
+    void run(int port) {
+        createMongoClients(port);
         beforeBenchTest();
         for (int i = 0; i < outerLoop; i++) {
             benchTest();
@@ -45,8 +34,8 @@ public abstract class MongodbAsyncBTest {
         closeMongoClients();
     }
 
-    void createMongoClients() {
-        String connectionString = "mongodb://127.0.0.1:27017";
+    void createMongoClients(int port) {
+        String connectionString = "mongodb://127.0.0.1:" + port;
         connectionString += "/?maxPoolSize=" + threadCount + "&&minPoolSize=" + (threadCount / 2);
         mongoClients = new MongoClient[clientCount];
         for (int i = 0; i < clientCount; i++) {

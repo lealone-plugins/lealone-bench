@@ -10,9 +10,24 @@ import org.bson.conversions.Bson;
 
 import com.mongodb.client.model.Filters;
 
-public class MongodbDocumentTest {
+public abstract class DocDatabaseBTest {
 
-    public static void main(String[] args) {
+    public static final int LEALONE_PORT = 9310;
+    public static final int MONGODB_PORT = 27017;
+
+    int threadCount = 48;
+    int outerLoop = 30;
+    int innerLoop = 200;
+
+    int clientCount = 2; // 超过cpu核数性能会下降
+
+    void beforeBenchTest() {
+    }
+
+    void afterBenchTest() {
+    }
+
+    public static void testDocument() {
         Document doc = Document.parse("{ status: { $in: [ \"A\", \"D\" ] } }");
         System.out.println(doc.toJson());
 
@@ -22,5 +37,4 @@ public class MongodbDocumentTest {
         bson = Filters.in("_id", 1, 2, 2);
         System.out.println(bson.toBsonDocument().toJson());
     }
-
 }

@@ -17,7 +17,7 @@ import com.mongodb.client.model.Filters;
 public class MongodbSyncSingleRowQueryBTest extends MongodbSyncBTest {
 
     public static void main(String[] args) {
-        new MongodbSyncSingleRowQueryBTest().run(27017);
+        new MongodbSyncSingleRowQueryBTest().run(MONGODB_PORT);
     }
 
     private final static AtomicInteger id = new AtomicInteger();
@@ -56,6 +56,7 @@ public class MongodbSyncSingleRowQueryBTest extends MongodbSyncBTest {
 
     @Override
     void execute(MongoCollection<Document> collection) {
+        // 用f1查MongoDB很慢
         MongoCursor<Document> cursor = collection.find(Filters.eq("f1", random.nextInt(rowCount)))
                 .iterator();
         try {

@@ -14,20 +14,9 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-public abstract class MongodbSyncBTest {
+public abstract class MongodbSyncBTest extends DocDatabaseBTest {
 
-    int threadCount = 48;
-    int outerLoop = 30;
-    int innerLoop = 200;
-
-    int clientCount = 2; // 超过cpu核数性能会下降
     MongoClient[] mongoClients;
-
-    void beforeBenchTest() {
-    }
-
-    void afterBenchTest() {
-    }
 
     void run(int port) {
         createMongoClients(port);

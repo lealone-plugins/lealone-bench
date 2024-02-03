@@ -5,9 +5,9 @@
  */
 package com.lealone.plugins.bench.misc.mongodb;
 
-public class LealoneDocdbSyncInsertBTest extends MongodbSyncInsertBTest {
+public class LealoneAsyncInsertBTest extends MongodbAsyncInsertBTest {
 
     public static void main(String[] args) {
-        new LealoneDocdbSyncInsertBTest().run(9610);
+        new LealoneAsyncInsertBTest().run(LEALONE_PORT);
     }
 }

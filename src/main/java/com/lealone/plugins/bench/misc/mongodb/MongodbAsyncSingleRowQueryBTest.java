@@ -20,7 +20,7 @@ import com.mongodb.reactivestreams.client.MongoCollection;
 public class MongodbAsyncSingleRowQueryBTest extends MongodbAsyncBTest {
 
     public static void main(String[] args) {
-        new MongodbAsyncSingleRowQueryBTest().run();
+        new MongodbAsyncSingleRowQueryBTest().run(MONGODB_PORT);
     }
 
     private final static AtomicInteger id = new AtomicInteger();

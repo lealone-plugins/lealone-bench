@@ -19,7 +19,7 @@ public class MongodbAsyncInsertBTest extends MongodbAsyncBTest {
     private final static AtomicInteger id = new AtomicInteger();
 
     public static void main(String[] args) throws Exception {
-        new MongodbAsyncInsertBTest().run();
+        new MongodbAsyncInsertBTest().run(MONGODB_PORT);
     }
 
     @Override

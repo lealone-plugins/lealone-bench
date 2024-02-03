@@ -5,10 +5,10 @@
  */
 package com.lealone.plugins.bench.misc.mongodb;
 
-public class LealoneDocdbSyncSingleRowQueryBTest extends MongodbSyncSingleRowQueryBTest {
+public class LealoneAsyncSingleRowQueryBTest extends MongodbAsyncSingleRowQueryBTest {
 
     public static void main(String[] args) {
-        new LealoneDocdbSyncSingleRowQueryBTest().run(9610);
+        new LealoneAsyncSingleRowQueryBTest().run(LEALONE_PORT);
     }
 
 }
