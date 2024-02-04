@@ -22,6 +22,7 @@ public class MongodbSyncInsertBTest extends MongodbSyncBTest {
 
     @Override
     void beforeBenchTest() {
+        operation = "insert";
         MongoCollection<Document> collection = getCollection(0);
         collection.drop();
     }

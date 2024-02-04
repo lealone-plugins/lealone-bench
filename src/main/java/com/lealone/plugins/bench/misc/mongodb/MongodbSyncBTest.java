@@ -5,6 +5,7 @@
  */
 package com.lealone.plugins.bench.misc.mongodb;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bson.Document;
@@ -62,8 +63,14 @@ public abstract class MongodbSyncBTest extends DocDatabaseBTest {
                 }
                 long t2 = System.nanoTime();
                 totalTime.addAndGet(t2 - t1);
+                String tn = "Thread-";
+                if (index < 10)
+                    tn = "Thread-0";
+                System.out.println(tn + index + ", document count: " + (innerLoop) + ", " + operation
+                        + " document time: " + TimeUnit.NANOSECONDS.toMillis(t2 - t1) + " ms");
             });
         }
+        long t1 = System.currentTimeMillis();
         for (int i = 0; i < threadCount; i++) {
             threads[i].start();
         }
@@ -74,9 +81,12 @@ public abstract class MongodbSyncBTest extends DocDatabaseBTest {
                 e.printStackTrace();
             }
         }
+        long t2 = System.currentTimeMillis();
+        long total = t2 - t1;
+        long avg = totalTime.get() / 1000 / 1000 / threadCount;
         System.out.println(getClass().getSimpleName() + " thread count: " + (threadCount)
-                + ", document count: " + (threadCount * innerLoop) + ", total time: "
-                + totalTime.get() / 1000 / 1000 / threadCount + " ms");
+                + ", document count: " + (threadCount * innerLoop) + ", total time: " + total + " ms"
+                + ", avg time: " + avg + " ms");
     }
 
     abstract void execute(MongoCollection<Document> collection);

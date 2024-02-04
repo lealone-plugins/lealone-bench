@@ -24,6 +24,7 @@ public class MongodbAsyncInsertBTest extends MongodbAsyncBTest {
 
     @Override
     void beforeBenchTest() {
+        operation = "insert";
         MongoCollection<Document> collection = getCollection(0);
         CountDownLatch latch0 = new CountDownLatch(1);
         collection.drop().subscribe(new Subscriber<Void>() {

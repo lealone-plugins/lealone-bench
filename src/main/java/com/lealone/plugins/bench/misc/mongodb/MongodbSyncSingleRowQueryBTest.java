@@ -26,8 +26,9 @@ public class MongodbSyncSingleRowQueryBTest extends MongodbSyncBTest {
 
     @Override
     void beforeBenchTest() {
-        threadCount = 16;
-        innerLoop = 250;
+        operation = "query";
+        threadCount = 48;
+        innerLoop = 200;
         MongoCollection<Document> collection = getCollection(0);
         // collection.drop();
         if (collection.countDocuments() <= 0)
@@ -57,7 +58,9 @@ public class MongodbSyncSingleRowQueryBTest extends MongodbSyncBTest {
     @Override
     void execute(MongoCollection<Document> collection) {
         // 用f1查MongoDB很慢
-        MongoCursor<Document> cursor = collection.find(Filters.eq("f1", random.nextInt(rowCount)))
+        String key = "f1";
+        key = "_id";
+        MongoCursor<Document> cursor = collection.find(Filters.eq(key, random.nextInt(rowCount)))
                 .iterator();
         try {
             while (cursor.hasNext()) {

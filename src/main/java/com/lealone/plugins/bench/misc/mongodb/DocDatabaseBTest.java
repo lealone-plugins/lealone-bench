@@ -18,6 +18,7 @@ public abstract class DocDatabaseBTest {
     int threadCount = 48;
     int outerLoop = 30;
     int innerLoop = 200;
+    String operation;
 
     int clientCount = 2; // 超过cpu核数性能会下降
 

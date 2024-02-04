@@ -29,6 +29,7 @@ public class MongodbAsyncSingleRowQueryBTest extends MongodbAsyncBTest {
 
     @Override
     void beforeBenchTest() {
+        operation = "query";
         threadCount = 16;
         innerLoop = 250;
         MongoCollection<Document> collection = getCollection(0);
