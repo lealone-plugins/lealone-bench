@@ -5,16 +5,12 @@
  */
 package com.lealone.plugins.bench.misc.mongodb;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.bson.Document;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 
 public class MongodbSyncInsertBTest extends MongodbSyncBTest {
-
-    private final static AtomicInteger id = new AtomicInteger();
 
     public static void main(String[] args) {
         new MongodbSyncInsertBTest().run(MONGODB_PORT);
@@ -30,7 +26,7 @@ public class MongodbSyncInsertBTest extends MongodbSyncBTest {
     @Override
     void afterBenchTest() {
         MongoCollection<Document> collection = getCollection(0);
-        System.out.println("total document count: " + collection.countDocuments());
+        System.out.println("Total document count: " + collection.countDocuments());
         // query(collection);
     }
 

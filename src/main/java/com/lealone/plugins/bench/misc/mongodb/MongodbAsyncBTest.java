@@ -24,25 +24,16 @@ public abstract class MongodbAsyncBTest extends DocDatabaseBTest {
 
     MongoClient[] mongoClients;
 
-    void run(int port) {
-        createMongoClients(port);
-        beforeBenchTest();
-        for (int i = 0; i < outerLoop; i++) {
-            benchTest();
-        }
-        afterBenchTest();
-        closeMongoClients();
-    }
-
+    @Override
     void createMongoClients(int port) {
-        String connectionString = "mongodb://127.0.0.1:" + port;
-        connectionString += "/?maxPoolSize=" + threadCount + "&&minPoolSize=" + (threadCount / 2);
+        String connectionString = getConnectionString(port);
         mongoClients = new MongoClient[clientCount];
         for (int i = 0; i < clientCount; i++) {
             mongoClients[i] = MongoClients.create(connectionString);
         }
     }
 
+    @Override
     void closeMongoClients() {
         for (int i = 0; i < clientCount; i++) {
             mongoClients[i].close();
@@ -88,41 +79,22 @@ public abstract class MongodbAsyncBTest extends DocDatabaseBTest {
         return count.get();
     }
 
-    void benchTest() {
-        AtomicLong totalTime = new AtomicLong();
-        Thread[] threads = new Thread[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            int index = i;
-            threads[i] = new Thread(() -> {
-                CountDownLatch latch = new CountDownLatch(1);
-                AtomicInteger counter = new AtomicInteger(innerLoop);
-                MongoCollection<Document> collection = getCollection(index);
-                long t1 = System.nanoTime();
-                for (int j = 0; j < innerLoop; j++) {
-                    execute(collection, latch, counter);
-                }
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                long t2 = System.nanoTime();
-                totalTime.addAndGet(t2 - t1);
-            });
+    @Override
+    long benchTest(int clientIndex) {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicInteger counter = new AtomicInteger(innerLoop);
+        MongoCollection<Document> collection = getCollection(clientIndex);
+        long t1 = System.nanoTime();
+        for (int j = 0; j < innerLoop; j++) {
+            execute(collection, latch, counter);
         }
-        for (int i = 0; i < threadCount; i++) {
-            threads[i].start();
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        for (int i = 0; i < threadCount; i++) {
-            try {
-                threads[i].join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        System.out.println(getClass().getSimpleName() + " thread count: " + (threadCount)
-                + ", document count: " + (threadCount * innerLoop) + ", total time: "
-                + totalTime.get() / 1000 / 1000 / threadCount + " ms");
+        long t2 = System.nanoTime();
+        return t2 - t1;
     }
 
     abstract void execute(MongoCollection<Document> collection, CountDownLatch latch,

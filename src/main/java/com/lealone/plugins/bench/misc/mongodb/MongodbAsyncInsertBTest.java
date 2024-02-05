@@ -16,8 +16,6 @@ import com.mongodb.reactivestreams.client.MongoCollection;
 
 public class MongodbAsyncInsertBTest extends MongodbAsyncBTest {
 
-    private final static AtomicInteger id = new AtomicInteger();
-
     public static void main(String[] args) throws Exception {
         new MongodbAsyncInsertBTest().run(MONGODB_PORT);
     }
@@ -56,7 +54,7 @@ public class MongodbAsyncInsertBTest extends MongodbAsyncBTest {
 
     @Override
     void afterBenchTest() {
-        System.out.println("total document count: " + countDocuments());
+        System.out.println("Total document count: " + countDocuments());
     }
 
     @Override

@@ -5,7 +5,6 @@
  */
 package com.lealone.plugins.bench.misc.mongodb;
 
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,15 +22,9 @@ public class MongodbAsyncSingleRowQueryBTest extends MongodbAsyncBTest {
         new MongodbAsyncSingleRowQueryBTest().run(MONGODB_PORT);
     }
 
-    private final static AtomicInteger id = new AtomicInteger();
-    private final int rowCount = 10000; // 总记录数
-    private final Random random = new Random();
-
     @Override
     void beforeBenchTest() {
         operation = "query";
-        threadCount = 16;
-        innerLoop = 250;
         MongoCollection<Document> collection = getCollection(0);
         if (countDocuments() <= 0)
             insert(collection);
@@ -49,7 +42,7 @@ public class MongodbAsyncSingleRowQueryBTest extends MongodbAsyncBTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("total document count: " + countDocuments());
+        System.out.println("Total document count: " + countDocuments());
     }
 
     @Override

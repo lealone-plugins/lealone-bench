@@ -5,9 +5,6 @@
  */
 package com.lealone.plugins.bench.misc.mongodb;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.bson.Document;
 
 import com.mongodb.client.MongoClient;
@@ -19,25 +16,16 @@ public abstract class MongodbSyncBTest extends DocDatabaseBTest {
 
     MongoClient[] mongoClients;
 
-    void run(int port) {
-        createMongoClients(port);
-        beforeBenchTest();
-        for (int i = 0; i < outerLoop; i++) {
-            benchTest();
-        }
-        afterBenchTest();
-        closeMongoClients();
-    }
-
+    @Override
     void createMongoClients(int port) {
-        String connectionString = "mongodb://127.0.0.1:" + port;
-        connectionString += "/?maxPoolSize=" + threadCount + "&&minPoolSize=" + (threadCount / 2);
+        String connectionString = getConnectionString(port);
         mongoClients = new MongoClient[clientCount];
         for (int i = 0; i < clientCount; i++) {
             mongoClients[i] = MongoClients.create(connectionString);
         }
     }
 
+    @Override
     void closeMongoClients() {
         for (int i = 0; i < clientCount; i++) {
             mongoClients[i].close();
@@ -50,43 +38,15 @@ public abstract class MongodbSyncBTest extends DocDatabaseBTest {
         return database.getCollection(getClass().getSimpleName());
     }
 
-    void benchTest() {
-        AtomicLong totalTime = new AtomicLong();
-        Thread[] threads = new Thread[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            int index = i;
-            threads[i] = new Thread(() -> {
-                MongoCollection<Document> collection = getCollection(index);
-                long t1 = System.nanoTime();
-                for (int j = 0; j < innerLoop; j++) {
-                    execute(collection);
-                }
-                long t2 = System.nanoTime();
-                totalTime.addAndGet(t2 - t1);
-                String tn = "Thread-";
-                if (index < 10)
-                    tn = "Thread-0";
-                System.out.println(tn + index + ", document count: " + (innerLoop) + ", " + operation
-                        + " document time: " + TimeUnit.NANOSECONDS.toMillis(t2 - t1) + " ms");
-            });
+    @Override
+    long benchTest(int clientIndex) {
+        MongoCollection<Document> collection = getCollection(clientIndex);
+        long t1 = System.nanoTime();
+        for (int j = 0; j < innerLoop; j++) {
+            execute(collection);
         }
-        long t1 = System.currentTimeMillis();
-        for (int i = 0; i < threadCount; i++) {
-            threads[i].start();
-        }
-        for (int i = 0; i < threadCount; i++) {
-            try {
-                threads[i].join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        long t2 = System.currentTimeMillis();
-        long total = t2 - t1;
-        long avg = totalTime.get() / 1000 / 1000 / threadCount;
-        System.out.println(getClass().getSimpleName() + " thread count: " + (threadCount)
-                + ", document count: " + (threadCount * innerLoop) + ", total time: " + total + " ms"
-                + ", avg time: " + avg + " ms");
+        long t2 = System.nanoTime();
+        return t2 - t1;
     }
 
     abstract void execute(MongoCollection<Document> collection);
