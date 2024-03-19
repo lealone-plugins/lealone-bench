@@ -14,10 +14,10 @@ import com.lealone.plugins.bench.cs.query.ClientServerQueryBTest;
 public abstract class SingleRowQueryBTest extends ClientServerQueryBTest {
 
     public SingleRowQueryBTest() {
-        threadCount = 16;
         outerLoop = 15;
-        innerLoop = 5;
-        sqlCountPerInnerLoop = 50;
+        threadCount = 48;
+        sqlCountPerInnerLoop = 20;
+        innerLoop = 10;
         rowCount = 10000;
         // prepare = true;
     }
@@ -58,7 +58,7 @@ public abstract class SingleRowQueryBTest extends ClientServerQueryBTest {
 
         @Override
         protected String nextSql() {
-            return "select * from SingleRowQueryBTest where f1=" + random.nextInt(rowCount);
+            return "select * from SingleRowQueryBTest where pk=" + random.nextInt(rowCount);
         }
 
         @Override

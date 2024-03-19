@@ -13,10 +13,12 @@ import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 public abstract class InsertBTest extends ClientServerWriteBTest {
 
     protected InsertBTest() {
+        benchTestLoop = 5;
         outerLoop = 30;
         threadCount = 48;
-        sqlCountPerInnerLoop = 20;
-        innerLoop = 10;
+        sqlCountPerInnerLoop = 10;
+        innerLoop = 20;
+        // batch = true;
         // printInnerLoopResult = true;
     }
 
@@ -25,7 +27,7 @@ public abstract class InsertBTest extends ClientServerWriteBTest {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
         statement.executeUpdate("drop table if exists InsertBTest");
-        String sql = "create table if not exists InsertBTest(pk int primary key, f1 int)"
+        String sql = "create table if not exists InsertBTest(pk int auto_increment primary key, f1 int)"
                 + " parameters(page_size='8k')";
         sql = "create table if not exists InsertBTest(pk int primary key, f1 int)";
         statement.executeUpdate(sql);

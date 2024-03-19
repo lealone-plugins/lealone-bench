@@ -12,12 +12,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.lealone.db.ConnectionSetting;
 import com.lealone.db.Constants;
-
 import com.lealone.plugins.bench.BenchTest;
 import com.lealone.plugins.bench.DbType;
 
@@ -45,6 +45,9 @@ public abstract class ClientServerBTest extends BenchTest {
 
     protected AtomicInteger id = new AtomicInteger();
     protected Random random = new Random();
+
+    protected AtomicInteger counterTop = new AtomicInteger(sqlCountPerInnerLoop * innerLoop);
+    protected CountDownLatch latchTop = new CountDownLatch(1);
 
     public void start() {
         String name = getBTestName();
@@ -96,11 +99,14 @@ public abstract class ClientServerBTest extends BenchTest {
                 run(threadCount, conns, true);
             }
         }
-
+        long t1 = System.currentTimeMillis();
         for (int i = 0; i < outerLoop; i++) {
             run(threadCount, conns, false);
         }
-
+        long t2 = System.currentTimeMillis();
+        System.out.println(getBTestName() + " sql count: "
+                + (outerLoop * threadCount * innerLoop * sqlCountPerInnerLoop) + ", total time: "
+                + (t2 - t1) + " ms");
         for (int i = 0; i < threadCount; i++) {
             close(conns[i]);
         }
@@ -115,19 +121,32 @@ public abstract class ClientServerBTest extends BenchTest {
         for (int i = 0; i < threadCount; i++) {
             threads[i] = createBTestThread(i, conns[i]);
         }
+        counterTop.set(threadCount * sqlCountPerInnerLoop * innerLoop);
+        latchTop = new CountDownLatch(1);
+        long t1 = System.currentTimeMillis();
         long totalTime = 0;
         for (int i = 0; i < threadCount; i++) {
             threads[i].setCloseConn(false);
             threads[i].start();
         }
+
+        // latchTop.await();
         for (int i = 0; i < threadCount; i++) {
             threads[i].join();
             totalTime += threads[i].getTotalTime();
+
+            // System.out.println(getBTestName() + " sql count: " + (innerLoop * sqlCountPerInnerLoop)
+            // + " start: " + threads[i].t1 + " end: " + threads[i].t2 + ", thread livecycle: "
+            // + (threads[i].t2 - threads[i].t1) + " ms, sql execute time: "
+            // + TimeUnit.NANOSECONDS.toMillis(threads[i].getTotalTime()) + " ms");
         }
+        long t2 = System.currentTimeMillis();
+        totalTime = TimeUnit.NANOSECONDS.toMillis(totalTime / threadCount);
+        // totalTime = (t2 - t1);
         System.out.println(
                 getBTestName() + " sql count: " + (threadCount * innerLoop * sqlCountPerInnerLoop)
-                        + ", total time: " + TimeUnit.NANOSECONDS.toMillis(totalTime / threadCount)
-                        + " ms" + (warmUp ? " (***WarmUp***)" : ""));
+                        + ", total time: " + totalTime + " ms" + (warmUp ? " (***WarmUp***)" : ""));
+        totalTime = (t2 - t1);
     }
 
     protected ClientServerBTestThread createBTestThread(int id, Connection conn) {
@@ -142,9 +161,12 @@ public abstract class ClientServerBTest extends BenchTest {
         protected boolean closeConn = true;
         protected long startTime;
         protected long endTime;
+        protected long t1;
+        protected long t2;
 
         public ClientServerBTestThread(int id, Connection conn) {
             super(getBTestName() + "Thread-" + id);
+            t1 = System.currentTimeMillis();
             this.conn = conn;
             try {
                 this.stmt = conn.createStatement();
@@ -184,6 +206,7 @@ public abstract class ClientServerBTest extends BenchTest {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
+                t2 = System.currentTimeMillis();
                 close(stmt, ps);
                 if (closeConn)
                     close(conn);

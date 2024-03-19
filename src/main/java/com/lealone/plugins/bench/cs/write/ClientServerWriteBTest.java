@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.lealone.client.jdbc.JdbcPreparedStatement;
 import com.lealone.client.jdbc.JdbcStatement;
-
 import com.lealone.plugins.bench.cs.ClientServerBTest;
 
 public abstract class ClientServerWriteBTest extends ClientServerBTest {
@@ -63,6 +62,9 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
                             endTime = System.nanoTime();
                             latch.countDown();
                         }
+                        if (counterTop.decrementAndGet() == 0) {
+                            latchTop.countDown();
+                        }
                     });
                 }
             }
@@ -79,6 +81,10 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
             for (int j = 0; j < innerLoop; j++) {
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     statement.executeUpdate(nextSql());
+                    if (counterTop.decrementAndGet() == 0) {
+                        // endTime = System.nanoTime();
+                        latchTop.countDown();
+                    }
                 }
             }
             if (!autoCommit)
