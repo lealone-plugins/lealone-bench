@@ -15,12 +15,19 @@ import com.lealone.plugins.bench.cs.query.ClientServerQueryBTest;
 public abstract class IndexQueryBTest extends ClientServerQueryBTest {
 
     public IndexQueryBTest() {
-        threadCount = 16;
-        benchTestLoop = 10;
+        // threadCount = 16;
+        // benchTestLoop = 10;
+        // outerLoop = 15;
+        // innerLoop = 5;
+        // sqlCountPerInnerLoop = 50;
+        // rowCount = 30000;
+        // // prepare = true;
+
         outerLoop = 15;
-        innerLoop = 5;
-        sqlCountPerInnerLoop = 50;
-        rowCount = 30000;
+        threadCount = 48;
+        sqlCountPerInnerLoop = 20;
+        innerLoop = 10;
+        rowCount = 10000;
         // prepare = true;
     }
 
