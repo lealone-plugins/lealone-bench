@@ -284,7 +284,7 @@ public abstract class ClientServerBTest extends BenchTest {
         // info.put("allowMultiQueries","true");
 
         info.put("useServerPrepStmts", "true");
-        // info.put("cachePrepStmts", "true");
+        info.put("cachePrepStmts", "true");
         info.put("rewriteBatchedStatements", "true");
         // info.put("useCompression", "true");
         info.put("serverTimezone", "GMT");
