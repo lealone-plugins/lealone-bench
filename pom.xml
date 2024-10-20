@@ -114,7 +114,7 @@
                                     </excludes>
                                 </filter>
                             </filters>
-                            <outputFile>target/lealone-bench-${project.version}-all.jar</outputFile>
+                            <outputFile>target/lealone-bench-plugin-${project.version}.jar</outputFile>
                         </configuration>
                     </execution>
                 </executions>
