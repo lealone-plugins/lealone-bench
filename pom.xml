@@ -68,6 +68,12 @@
             <artifactId>jctools-core</artifactId>
             <version>3.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+            <version>0.9</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
