@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.index;
+package com.lealone.plugins.bench.cs.index.create;
 
 import java.sql.Connection;
 import java.sql.Statement;

@@ -3,11 +3,11 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.index;
+package com.lealone.plugins.bench.cs.index.create;
 
-public class MySQLIndexCreateBTest extends IndexCreateBTest {
+public class LealoneIndexCreateBTest extends IndexCreateBTest {
 
     public static void main(String[] args) {
-        new MySQLIndexCreateBTest().start();
+        new LealoneIndexCreateBTest().start();
     }
 }

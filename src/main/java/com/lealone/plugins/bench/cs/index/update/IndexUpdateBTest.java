@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.batch;
+package com.lealone.plugins.bench.cs.index.update;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,33 +13,27 @@ import java.util.concurrent.TimeUnit;
 import com.lealone.plugins.bench.DbType;
 import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 
-public class BatchBTest extends ClientServerWriteBTest {
+public class IndexUpdateBTest extends ClientServerWriteBTest {
 
     protected boolean init;
     protected boolean useRandom;
-    protected int batchCount = 1000;
+    protected int batchCount = 200;
     protected String tableName;
 
-    protected BatchBTest() {
-        benchTestLoop = 50;
+    protected IndexUpdateBTest() {
+        benchTestLoop = 20;
         rowCount = 10 * 10000;
         init = true;
         // useRandom = true;
-        tableName = "BatchBTest";
+        tableName = "IndexUpdateBTest";
     }
-
-    Connection conn;
 
     @Override
     public void run() throws Exception {
-        // conn = getConnection();
-        if (init) {
-            for (int i = 0; i < benchTestLoop; i++) {
-                init0();
-            }
+        for (int i = 0; i < benchTestLoop; i++) {
+            init0();
+            run0();
         }
-        run0();
-        // close(conn);
     }
 
     private void init0() throws Exception {
@@ -47,29 +41,25 @@ public class BatchBTest extends ClientServerWriteBTest {
         Statement statement = conn.createStatement();
         createTable(statement, false);
         createIndex(statement, "f1", false);
-        // createIndex(statement, "f2", false);
-        batchPreparedInsert0(conn, "batchPreparedInsert");
-        // statement.executeQuery("select sum(f1) from " + tableName + " where pk>=0");
-        // close(statement);
+        createIndex(statement, "f2", false);
+        createIndex(statement, "f2,f1", false);
         close(statement, conn);
     }
 
     private void run0() throws Exception {
-        for (int i = 0; i < benchTestLoop; i++) {
-            Connection conn = getConnection();
-            Statement statement = conn.createStatement();
-            run0(conn, statement);
-            close(statement, conn);
-        }
+        Connection conn = getConnection();
+        Statement statement = conn.createStatement();
+        run0(conn, statement);
+        close(statement, conn);
     }
 
     private void run0(Connection conn, Statement statement) throws Exception {
-        // batchInsert(statement);
-        // batchPreparedInsert(conn, statement);
-        // batchAppend(statement);
-        // batchPreparedAppend(conn, statement);
-        // batchUpdate(statement);
-        batchPreparedUpdate(conn);
+        // insert(statement);
+        preparedInsert(conn, statement);
+        // append(statement);
+        // preparedAppend(conn, statement);
+        // update(statement);
+        // preparedUpdate(conn);
     }
 
     public void createTable(Statement statement) throws Exception {
@@ -111,7 +101,7 @@ public class BatchBTest extends ClientServerWriteBTest {
         }
     }
 
-    private void batchInsert0(Statement statement, String method) throws Exception {
+    private void insert0(Statement statement, String method) throws Exception {
         long t1 = System.nanoTime();
         for (int i = 1; i <= rowCount; i++) {
             StringBuilder sql = new StringBuilder();
@@ -127,7 +117,7 @@ public class BatchBTest extends ClientServerWriteBTest {
         println(method, t1);
     }
 
-    private void batchPreparedInsert0(Connection conn, String method) throws Exception {
+    private void preparedInsert0(Connection conn, String method) throws Exception {
         long t1 = System.nanoTime();
         String sql = "INSERT INTO " + tableName + "(pk, f1, f2) VALUES(?,?,?)";
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -136,6 +126,7 @@ public class BatchBTest extends ClientServerWriteBTest {
             int f = useRandom ? random.nextInt(rowCount) : i * 10;
             ps.setInt(2, f);
             ps.setString(3, "v-" + f);
+            // ps.executeUpdate();
             ps.addBatch();
             if (i % batchCount == 0)
                 ps.executeBatch();
@@ -144,27 +135,27 @@ public class BatchBTest extends ClientServerWriteBTest {
         println(method, t1);
     }
 
-    public void batchInsert(Statement statement) throws Exception {
-        createTable(statement, false);
-        batchInsert0(statement, "batchInsert");
+    public void insert(Statement statement) throws Exception {
+        // createTable(statement, false);
+        insert0(statement, "insert");
     }
 
-    public void batchPreparedInsert(Connection conn, Statement statement) throws Exception {
-        createTable(statement, false);
-        batchPreparedInsert0(conn, "batchPreparedInsert");
+    public void preparedInsert(Connection conn, Statement statement) throws Exception {
+        // createTable(statement, false);
+        preparedInsert0(conn, "preparedInsert");
     }
 
-    public void batchAppend(Statement statement) throws Exception {
-        createTable(statement, true);
-        batchInsert0(statement, "batchAppend");
+    public void append(Statement statement) throws Exception {
+        // createTable(statement, true);
+        insert0(statement, "append");
     }
 
-    public void batchPreparedAppend(Connection conn, Statement statement) throws Exception {
-        createTable(statement, true);
-        batchPreparedInsert0(conn, "batchPreparedAppend");
+    public void preparedAppend(Connection conn, Statement statement) throws Exception {
+        // createTable(statement, true);
+        preparedInsert0(conn, "preparedAppend");
     }
 
-    public void batchUpdate(Statement statement) throws Exception {
+    public void update(Statement statement) throws Exception {
         long t1 = System.nanoTime();
         for (int i = 1; i <= rowCount; i++) {
             StringBuilder sql = new StringBuilder();
@@ -177,10 +168,10 @@ public class BatchBTest extends ClientServerWriteBTest {
             if (i % batchCount == 0)
                 statement.executeBatch();
         }
-        println("batchUpdate", t1);
+        println("update", t1);
     }
 
-    public void batchPreparedUpdate(Connection conn) throws Exception {
+    public void preparedUpdate(Connection conn) throws Exception {
         long t1 = System.nanoTime();
         String sql = "UPDATE " + tableName + " set f1=?, f2=? where pk=?";
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -194,7 +185,7 @@ public class BatchBTest extends ClientServerWriteBTest {
                 ps.executeBatch();
         }
         ps.close();
-        println("batchPreparedUpdate", t1);
+        println("preparedUpdate", t1);
     }
 
     private void println(String method, long t1) {
