@@ -336,7 +336,7 @@ public class TpccBench extends TpccConfig {
             System.out.println(" " + TRANSACTION_NAME[j] + " Total: " + (success[j] + late[j]));
         }
 
-        float tpcm = (success[0] + late[0]) * 60000f / actualTestTime;
+        float tpcm = (success[4] + late[4]) * 60000f / actualTestTime;
 
         System.out.println();
         System.out.println("<TpmC>");

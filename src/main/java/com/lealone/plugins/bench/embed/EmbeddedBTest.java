@@ -5,9 +5,6 @@
  */
 package com.lealone.plugins.bench.embed;
 
-import java.io.File;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,21 +12,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.lealone.db.LealoneDatabase;
-import com.lealone.db.SysProperties;
-import com.lealone.test.TestBase;
+import com.lealone.plugins.bench.BenchTest;
 import com.lealone.transaction.aote.log.LogSyncService;
 
-import com.lealone.plugins.bench.BenchTest;
-
 public abstract class EmbeddedBTest extends BenchTest {
-
-    public static String joinDirs(String... dirs) {
-        StringBuilder s = new StringBuilder(BENCH_TEST_BASE_DIR);
-        for (String dir : dirs)
-            s.append(File.separatorChar).append(dir);
-        return s.toString();
-    }
 
     protected final AtomicLong pendingOperations = new AtomicLong(0);
     protected final AtomicLong startTime = new AtomicLong(0);
@@ -50,23 +36,6 @@ public abstract class EmbeddedBTest extends BenchTest {
         randomKeys = getRandomKeys();
     }
 
-    public static Connection getEmbeddedH2Connection() throws Exception {
-        String url;
-        url = "jdbc:h2:file:./EmbeddedBenchTestDB";
-        // url = "jdbc:h2:mem:mydb";
-        // url += ";OPEN_NEW=true;FORBID_CREATION=false";
-        url += ";FORBID_CREATION=false";
-        return DriverManager.getConnection(url, "sa", "");
-    }
-
-    public static Connection getEmbeddedLealoneConnection() throws Exception {
-        TestBase test = new TestBase();
-        test.setEmbedded(true);
-        String url = test.getURL(LealoneDatabase.NAME);
-        SysProperties.setBaseDir(joinDirs("lealone"));
-        return DriverManager.getConnection(url);
-    }
-
     protected void initTransactionEngineConfig(HashMap<String, String> config) {
         config.put("base_dir", joinDirs("lealone", "amte"));
         config.put("redo_log_dir", "redo_log");
@@ -75,6 +44,7 @@ public abstract class EmbeddedBTest extends BenchTest {
         config.put("log_sync_type", LogSyncService.LOG_SYNC_TYPE_PERIODIC);
         // config.put("log_sync_type", LogSyncService.LOG_SYNC_TYPE_NO_SYNC);
         config.put("log_sync_period", "50"); // 500ms
+        config.put("embedded", "true");
     }
 
     protected int[] getRandomKeys() {

@@ -7,7 +7,7 @@ package com.lealone.plugins.bench.misc;
 
 import java.math.BigDecimal;
 
-import com.lealone.db.result.Row;
+import com.lealone.db.row.Row;
 import com.lealone.db.value.Value;
 import com.lealone.db.value.ValueBoolean;
 import com.lealone.db.value.ValueByte;
@@ -48,13 +48,29 @@ public class JavaObjectSizeTest {
         values[1] = ValueLong.get(100);
         values[2] = ValueString.get("abc");
         Row row = new Row(values);
-        row.setVersion(1);
         row.setKey(10);
         size(row);
 
-        size(new Object());
         size(Integer.valueOf(1000));
         size(Long.valueOf(1000L));
+
+        size(new Row2());
+
+        size(new Object());
+        size(new Object[0]);
+        size(new Object[1]);
+        size(new Object[2]);
+
+        size(new int[0]);
+        size(new int[1]);
+        size(new int[2]);
+    }
+
+    public static class Row2 {
+        long key;
+        int f1;
+        int f2;
+        // int f3;
     }
 
     private static void size(Object obj) {

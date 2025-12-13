@@ -8,12 +8,8 @@ package com.lealone.plugins.bench.embed.transaction;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.lealone.db.scheduler.EmbeddedScheduler;
-import com.lealone.db.scheduler.Scheduler;
-import com.lealone.db.scheduler.SchedulerFactory;
 import com.lealone.storage.aose.AOStorage;
 import com.lealone.storage.aose.AOStorageBuilder;
-import com.lealone.storage.page.PageOperation;
 import com.lealone.test.aote.TransactionEngineTest;
 import com.lealone.transaction.Transaction;
 import com.lealone.transaction.TransactionEngine;
@@ -22,7 +18,7 @@ import com.lealone.transaction.TransactionMap;
 public class LealoneTransactionBTest extends TransactionBTest {
 
     public static void main(String[] args) throws Exception {
-        printMemoryUsage();
+        // printMemoryUsage();
         LealoneTransactionBTest test = new LealoneTransactionBTest();
         run(test);
     }
@@ -32,7 +28,6 @@ public class LealoneTransactionBTest extends TransactionBTest {
 
     private final HashMap<String, String> config = new HashMap<>();
     private final AtomicInteger index = new AtomicInteger(0);
-    private Scheduler[] schedulers;
     private TransactionEngine te;
 
     @Override
@@ -43,13 +38,6 @@ public class LealoneTransactionBTest extends TransactionBTest {
 
     @Override
     protected void init() throws Exception {
-        String factoryType = "RoundRobin";
-        factoryType = "Random";
-        // factoryType = "LoadBalance";
-        config.put("page_operation_handler_factory_type", factoryType);
-        // config.put("page_operation_handler_count", (threadCount + 1) + "");
-        createPageOperationHandlers();
-
         AOStorageBuilder builder = new AOStorageBuilder(config);
         storagePath = joinDirs("lealone", "aose");
         int pageSize = 16 * 1024;
@@ -66,15 +54,6 @@ public class LealoneTransactionBTest extends TransactionBTest {
     protected void destroy() throws Exception {
         te.close();
         storage.close();
-    }
-
-    private void createPageOperationHandlers() {
-        schedulers = new Scheduler[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            schedulers[i] = new EmbeddedScheduler(i, threadCount, config);
-        }
-        SchedulerFactory f = SchedulerFactory.create(config, schedulers);
-        f.start();
     }
 
     private void singleThreadSerialWrite() {
@@ -110,25 +89,6 @@ public class LealoneTransactionBTest extends TransactionBTest {
             t2.commit();
             // System.out.println(getName() + " key:" + key);
             notifyOperationComplete();
-        }
-    }
-
-    @Override
-    protected BenchTestTask createBenchTestTask(int start, int end) throws Exception {
-        return new LealoneTransactionBenchTestTask(start, end);
-    }
-
-    class LealoneTransactionBenchTestTask extends TransactionBenchTestTask implements PageOperation {
-
-        LealoneTransactionBenchTestTask(int start, int end) throws Exception {
-            super(start, end);
-            Scheduler s = schedulers[index.getAndIncrement()];
-            s.handlePageOperation(this);
-        }
-
-        @Override
-        public boolean needCreateThread() {
-            return false;
         }
     }
 }

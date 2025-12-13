@@ -13,11 +13,15 @@ import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 public abstract class AppendBTest extends ClientServerWriteBTest {
 
     public AppendBTest() {
+        benchTestLoop = 10;
         outerLoop = 15;
         threadCount = 48;
-        sqlCountPerInnerLoop = 20;
-        innerLoop = 10;
+        sqlCountPerInnerLoop = 10;
+        innerLoop = 20;
         // prepare = true;
+        reinit = false;
+        // autoCommit = false;
+        embedded = true;
     }
 
     @Override
@@ -25,8 +29,13 @@ public abstract class AppendBTest extends ClientServerWriteBTest {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
         statement.executeUpdate("drop table if exists AppendBTest");
-        String sql = "create table if not exists AppendBTest(name varchar(20), f1 int, f2 int)";
+        String sql = "create table if not exists AppendBTest(name varchar(20), f1 int, f2 bigint)";
         statement.executeUpdate(sql);
+        for (int i = 0; i < 0; i++) {
+            statement.executeUpdate("drop table if exists AppendBTest" + i);
+            sql = "create table if not exists AppendBTest" + i + "(name varchar(20), f1 int, f2 bigint)";
+            statement.executeUpdate(sql);
+        }
         close(statement, conn);
     }
 
@@ -45,6 +54,9 @@ public abstract class AppendBTest extends ClientServerWriteBTest {
         @Override
         protected String nextSql() {
             int i = id.incrementAndGet();
+            // int t = i % 4;
+            // return "insert into AppendBTest" + t + " values('n" + i + "'," + i + "," + (i * 10) + ")";
+
             return "insert into AppendBTest values('n" + i + "'," + i + "," + (i * 10) + ")";
         }
 
@@ -53,7 +65,7 @@ public abstract class AppendBTest extends ClientServerWriteBTest {
             int i = id.incrementAndGet();
             ps.setString(1, "n" + i);
             ps.setInt(2, i);
-            ps.setInt(3, i * 10);
+            ps.setLong(3, i * 10);
         }
     }
 }

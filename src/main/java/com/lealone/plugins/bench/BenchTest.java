@@ -16,6 +16,13 @@ import java.lang.management.MemoryUsage;
 //-XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xmx800M
 public abstract class BenchTest {
 
+    public static String joinDirs(String... dirs) {
+        StringBuilder s = new StringBuilder(BENCH_TEST_BASE_DIR);
+        for (String dir : dirs)
+            s.append(File.separatorChar).append(dir);
+        return s.toString();
+    }
+
     public static final String BENCH_TEST_BASE_DIR = "." + File.separatorChar + "target"
             + File.separatorChar + "bench-test-data";
 

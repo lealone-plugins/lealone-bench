@@ -10,6 +10,7 @@ public enum DbType {
     MYSQL,
     POSTGRESQL,
     LEALONE,
+    SQLITE,
     LM, // lealone mysql客户端
     LP // lealone postgresql客户端
 }

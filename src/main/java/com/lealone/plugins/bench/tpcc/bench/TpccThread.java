@@ -79,7 +79,7 @@ public class TpccThread extends Thread implements TpccConstants {
 
     public TpccThread(Connection conn, int t_num, int num_ware, int fetchSize, boolean joins,
             TpccBench tb) {
-        super("tcpp-thread-" + (t_num + 1));
+        super("tpcc-thread-" + (t_num + 1));
         for (int i = 0; i < TRANSACTION_COUNT; i++) {
             min_rt[i] = Long.MAX_VALUE;
         }
@@ -179,6 +179,7 @@ public class TpccThread extends Thread implements TpccConstants {
     }
 
     private void doNextTransaction(int sequence) throws SQLException {
+        sequence = 3;
         if (sequence == 0) {
             doNeword();
         } else if (sequence == 1) {
@@ -330,7 +331,9 @@ public class TpccThread extends Thread implements TpccConstants {
         int o_carrier_id = Util.randomNumber(1, 10);
         long beginTime = System.currentTimeMillis();
         for (int i = 0; i < MAX_RETRY; i++) {
+            // long beginTime2 = System.currentTimeMillis();
             int result = delivery.delivery(w_id, o_carrier_id);
+            // System.out.println(System.currentTimeMillis() - beginTime2);
             if (handleResult(beginTime, result, 3)) {
                 return;
             }

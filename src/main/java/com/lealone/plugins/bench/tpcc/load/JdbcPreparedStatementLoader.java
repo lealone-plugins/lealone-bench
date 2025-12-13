@@ -8,6 +8,8 @@ package com.lealone.plugins.bench.tpcc.load;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.concurrent.Future;
 
 /**
@@ -22,6 +24,7 @@ public class JdbcPreparedStatementLoader implements RecordLoader {
     private ArrayList<Future<?>> futures = new ArrayList<>();
     private ArrayList<Record> records = new ArrayList<>();
     private String sql;
+    private HashMap<Connection, PreparedStatement> psCache = new HashMap<>();
 
     public JdbcPreparedStatementLoader(String tableName, String[] columnNames, boolean ignore,
             int maxBatchSize) {
@@ -66,8 +69,15 @@ public class JdbcPreparedStatementLoader implements RecordLoader {
         if (!records.isEmpty()) {
             executeBatch();
         }
-        for (Future<?> f : futures)
+        for (Future<?> f : futures) {
             f.get();
+        }
+        for (Entry<Connection, PreparedStatement> e : psCache.entrySet()) {
+            synchronized (e.getKey()) {
+                e.getValue().close();
+            }
+        }
+        psCache.clear();
     }
 
     private void executeBatch() throws Exception {
@@ -80,7 +90,11 @@ public class JdbcPreparedStatementLoader implements RecordLoader {
         try {
             Connection conn = TpccLoad.getNextConnection();
             synchronized (conn) {
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement pstmt = psCache.get(conn);
+                if (pstmt == null) {
+                    pstmt = conn.prepareStatement(sql);
+                    psCache.put(conn, pstmt);
+                }
                 for (Record r : records) {
                     for (int i = 0; i < columnNames.length; i++) {
                         pstmt.setObject(i + 1, r.getField(i));
@@ -88,8 +102,9 @@ public class JdbcPreparedStatementLoader implements RecordLoader {
                     pstmt.addBatch();
                 }
                 pstmt.executeBatch();
-                conn.commit();
-                pstmt.close();
+                if (!conn.getAutoCommit())
+                    conn.commit();
+                // pstmt.close();
             }
         } catch (Exception e) {
             throw new RuntimeException("Error loading into table '" + tableName + "' with SQL: " + sql,

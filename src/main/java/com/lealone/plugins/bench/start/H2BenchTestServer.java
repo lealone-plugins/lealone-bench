@@ -31,16 +31,22 @@ public class H2BenchTestServer {
         // list.add("-web");
         // list.add("-ifExists");
         list.add("-ifNotExists");
+        System.out.println("H2 jvm pid: "
+                + java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
         org.h2.tools.Server.main(list.toArray(new String[list.size()]));
     }
 
     public static void setH2Properties() {
+        String testDir = BenchTest.BENCH_TEST_BASE_DIR;
+        testDir = "F:/target";
         System.setProperty("h2.queryCacheSize", "0");
         // System.setProperty("DATABASE_TO_UPPER", "false");
         System.setProperty("h2.lobInDatabase", "false");
         System.setProperty("h2.lobClientMaxSizeMemory", "1024");
-        System.setProperty("java.io.tmpdir", BenchTest.BENCH_TEST_BASE_DIR + "/h2/tmp");
-        System.setProperty("h2.baseDir", BenchTest.BENCH_TEST_BASE_DIR + "/h2");
+        System.setProperty("java.io.tmpdir", testDir + "/h2/tmp");
+        System.setProperty("h2.baseDir", testDir + "/h2");
         // System.setProperty("h2.check2", "true");
+        System.setProperty("h2.bindAddress", "localhost");
+
     }
 }

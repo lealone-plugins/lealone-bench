@@ -5,22 +5,23 @@
  */
 package com.lealone.plugins.bench.embed.storage.psm;
 
-import com.lealone.db.index.standard.ValueDataType;
-import com.lealone.db.index.standard.VersionedValue;
-import com.lealone.db.index.standard.VersionedValueType;
+import java.util.HashMap;
+
+import com.lealone.db.index.standard.PrimaryKeyType;
+import com.lealone.db.row.Row;
+import com.lealone.db.row.RowType;
 import com.lealone.db.value.Value;
 import com.lealone.db.value.ValueLong;
 import com.lealone.db.value.ValueString;
 import com.lealone.storage.CursorParameters;
 import com.lealone.storage.StorageMap;
 import com.lealone.storage.StorageMapCursor;
+import com.lealone.storage.StorageSetting;
 import com.lealone.storage.aose.AOStorage;
 import com.lealone.storage.aose.btree.BTreeMap;
 import com.lealone.storage.aose.btree.page.PageStorageMode;
 import com.lealone.test.TestBase;
-import com.lealone.test.aose.AOStorageTest;
-import com.lealone.transaction.aote.TransactionalValue;
-import com.lealone.transaction.aote.TransactionalValueType;
+import com.lealone.test.aose.AoseTestBase;
 
 //把CACHE_SIZE加大后，RowStorage的方式有更多内存就不会重复从硬盘读取page，此时就跟ColumnStorage的性能差不多
 public class PageStorageModeBTest extends TestBase {
@@ -35,133 +36,78 @@ public class PageStorageModeBTest extends TestBase {
     int cacheSize = 100 * 1024 * 1024; // 100M
 
     public void run() {
-        ValueDataType keyType = new ValueDataType(null, null, null);
-        VersionedValueType vvType = new VersionedValueType(null, null, null, columnCount);
-        TransactionalValueType tvType = new TransactionalValueType(vvType);
+        PrimaryKeyType keyType = new PrimaryKeyType();
+        RowType valueType = new RowType(null, columnCount);
 
         for (int i = 0; i < 10; i++) {
             System.out.println();
             System.out.println("------------------loop " + (i + 1) + " start---------------------");
-            testRowStorage(keyType, tvType);
+            testRowStorage(keyType, valueType);
 
             System.out.println();
-            testColumnStorage(keyType, tvType);
+            testColumnStorage(keyType, valueType);
             System.out.println("------------------loop " + (i + 1) + " end---------------------");
         }
     }
 
-    void putData(StorageMap<ValueLong, TransactionalValue> map) {
-        if (map.isEmpty()) {
-            // Random random = new Random();
-            for (int row = 1; row <= rowCount; row++) {
-                ValueLong key = ValueLong.get(row);
-                Value[] columns = new Value[columnCount];
-                for (int col = 0; col < columnCount; col++) {
-                    // columns[col] = ValueString.get("a string");
-                    // int randomIndex = random.nextInt(columnCount);
-                    // columns[col] = ValueString.get("value-" + randomIndex);
-                    // if (col % 2 == 0) {
-                    // columns[col] = ValueString.get("a string");
-                    // } else {
-                    columns[col] = ValueString.get("value-row" + row + "-col" + (col + 1));
-                    // }
-                }
-                // System.out.println(Arrays.asList(columns));
-                VersionedValue vv = new VersionedValue(row, columns);
-                TransactionalValue tv = TransactionalValue.createCommitted(vv);
-                map.put(key, tv);
+    private void putData(StorageMap<ValueLong, Row> map) {
+        if (!map.isEmpty())
+            return;
+        for (int row = 1; row <= rowCount; row++) {
+            ValueLong key = ValueLong.get(row);
+            Value[] columns = new Value[columnCount];
+            for (int col = 0; col < columnCount; col++) {
+                columns[col] = ValueString.get("value-row" + row + "-col" + (col + 1));
             }
-            map.save();
-            // map.remove();
+            Row r = new Row(row, columns);
+            map.put(key, r);
         }
+        map.save();
     }
 
-    void testRowStorage(ValueDataType keyType, TransactionalValueType tvType) {
-        long t0 = System.currentTimeMillis();
-        long t1 = System.currentTimeMillis();
-        AOStorage storage = AOStorageTest.openStorage(pageSize, cacheSize);
-        BTreeMap<ValueLong, TransactionalValue> map = storage.openBTreeMap("testRowStorage", keyType,
-                tvType, null);
-        map.setPageStorageMode(PageStorageMode.ROW_STORAGE);
-        putData(map);
-        long t2 = System.currentTimeMillis();
-        System.out.println("RowStorage openBTreeMap time: " + (t2 - t1) + " ms");
+    private void testRowStorage(PrimaryKeyType keyType, RowType valueType) {
+        testStorage(keyType, valueType, PageStorageMode.ROW_STORAGE, "testRowStorage");
+    }
 
-        System.out.println("firstKey: " + map.firstKey());
-        ValueLong key = ValueLong.get(2);
+    private void testColumnStorage(PrimaryKeyType keyType, RowType valueType) {
+        testStorage(keyType, valueType, PageStorageMode.COLUMN_STORAGE, "testColumnStorage");
+    }
+
+    private void testStorage(PrimaryKeyType keyType, RowType valueType, PageStorageMode mode,
+            String mapName) {
+        AOStorage storage = AoseTestBase.openStorage(pageSize, cacheSize);
+        HashMap<String, String> parameters = new HashMap<>();
+        parameters.put(StorageSetting.PAGE_STORAGE_MODE.name(), mode.name());
+        BTreeMap<ValueLong, Row> map = storage.openBTreeMap(mapName, keyType, valueType, parameters);
+        putData(map);
+
+        ValueLong firstKey = map.firstKey();
+        assertEquals(1, firstKey.getLong());
+
         int columnIndex = 2; // 索引要从0开始算
-        TransactionalValue tv = map.get(key);
-        VersionedValue vv = (VersionedValue) tv.getValue();
-        System.out.println(vv.columns[columnIndex]);
-        t1 = System.currentTimeMillis();
+
+        ValueLong key = ValueLong.get(4000);
+        Row r = map.get(key);
+        Value columnValue = r.getColumns()[columnIndex];
+        assertEquals("value-row4000-col3", columnValue.getString());
+
+        key = ValueLong.get(2);
+        r = map.get(key, columnIndex);
+        columnValue = r.getColumns()[columnIndex];
+        assertEquals("value-row2-col3", columnValue.getString());
+
         key = ValueLong.get(2999);
-        tv = map.get(key);
-        vv = (VersionedValue) tv.getValue();
-        t2 = System.currentTimeMillis();
-        System.out.println("RowStorage get time: " + (t2 - t1) + " ms");
-        System.out.println(vv.columns[columnIndex]);
+        r = map.get(key, columnIndex);
+        columnValue = r.getColumns()[columnIndex];
+        assertEquals("value-row2999-col3", columnValue.getString());
 
         int rows = 0;
         ValueLong from = ValueLong.get(2000);
-        t1 = System.currentTimeMillis();
-        StorageMapCursor<ValueLong, TransactionalValue> cursor = map.cursor(from);
+        StorageMapCursor<ValueLong, Row> cursor = map.cursor(CursorParameters.create(from, columnIndex));
         while (cursor.next()) {
             rows++;
         }
-        t2 = System.currentTimeMillis();
-        System.out.println("RowStorage cursor time: " + (t2 - t1) + " ms" + ", rows: " + rows);
-
-        System.out.println("RowStorage total time: " + (t2 - t0) + " ms");
-        // map.close(); //关闭之后就把缓存也关了
-    }
-
-    void testColumnStorage(ValueDataType keyType, TransactionalValueType tvType) {
-        long t0 = System.currentTimeMillis();
-        long t1 = System.currentTimeMillis();
-        AOStorage storage = AOStorageTest.openStorage(pageSize);
-        BTreeMap<ValueLong, TransactionalValue> map = storage.openBTreeMap("testColumnStorage", keyType,
-                tvType, null);
-        map.setPageStorageMode(PageStorageMode.COLUMN_STORAGE);
-        putData(map);
-        long t2 = System.currentTimeMillis();
-        System.out.println("ColumnStorage openBTreeMap time: " + (t2 - t1) + " ms");
-        System.out.println("firstKey: " + map.firstKey());
-
-        // t1 = System.currentTimeMillis();
-        // map.get(ValueLong.get(4000));
-        // t2 = System.currentTimeMillis();
-        // System.out.println("hrcse get all columns time: " + (t2 - t1) + " ms");
-
-        ValueLong key = ValueLong.get(2);
-        int columnIndex = 2; // 索引要从0开始算
-        TransactionalValue tv = map.get(key, columnIndex);
-        VersionedValue vv = (VersionedValue) tv.getValue();
-        System.out.println(vv.columns[columnIndex]);
-        t1 = System.currentTimeMillis();
-        key = ValueLong.get(2999);
-        tv = map.get(key, columnIndex);
-        vv = (VersionedValue) tv.getValue();
-        t2 = System.currentTimeMillis();
-        System.out.println("ColumnStorage get time: " + (t2 - t1) + " ms");
-        System.out.println(vv.columns[columnIndex]);
-
-        // key = ValueLong.get(2000);
-        // tv = map.get(key, columnIndex);
-        // vv = (VersionedValue) tv.value;
-        // System.out.println(vv.value.getList()[columnIndex]);
-
-        int rows = 0;
-        ValueLong from = ValueLong.get(2000);
-        t1 = System.currentTimeMillis();
-        StorageMapCursor<ValueLong, TransactionalValue> cursor = map
-                .cursor(CursorParameters.create(from, columnIndex));
-        while (cursor.next()) {
-            rows++;
-        }
-        t2 = System.currentTimeMillis();
-        System.out.println("ColumnStorage cursor time: " + (t2 - t1) + " ms" + ", rows: " + rows);
-
-        System.out.println("ColumnStorage total time: " + (t2 - t0) + " ms");
-        // map.close();
+        assertEquals(rowCount - 2000 + 1, rows);
+        map.close();
     }
 }

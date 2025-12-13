@@ -19,6 +19,8 @@ import com.lealone.storage.aose.AOStorage;
 import com.lealone.storage.aose.AOStorageBuilder;
 import com.lealone.storage.aose.btree.BTreeMap;
 import com.lealone.storage.aose.btree.page.Page;
+import com.lealone.storage.type.StorageDataType;
+import com.lealone.storage.type.StorageDataTypeFactory;
 
 public abstract class StorageMapBTest extends EmbeddedBTest {
 
@@ -151,7 +153,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
 
     protected void openStorage() {
         AOStorageBuilder builder = new AOStorageBuilder(config);
-        builder.schedulerFactory(schedulerFactory);
+        // builder.schedulerFactory(schedulerFactory);
         storagePath = joinDirs("lealone", "aose");
         int pageSize = 16 * 1024;
         pageSize = 2 * 1024;
@@ -461,5 +463,13 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         super.resetFields();
         if (testConflictOnly)
             pendingOperations.set(conflictKeyCount * threadCount);
+    }
+
+    public StorageDataType getIntType() {
+        return StorageDataTypeFactory.getIntType();
+    }
+
+    public StorageDataType getStringType() {
+        return StorageDataTypeFactory.getStringType();
     }
 }

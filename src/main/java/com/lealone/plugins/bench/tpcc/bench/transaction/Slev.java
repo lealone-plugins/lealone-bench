@@ -10,7 +10,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.lealone.client.jdbc.JdbcPreparedStatement;
-
 import com.lealone.plugins.bench.tpcc.bench.TpccThread;
 import com.lealone.plugins.bench.tpcc.config.TpccConstants;
 

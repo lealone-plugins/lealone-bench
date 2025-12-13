@@ -20,7 +20,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.lealone.common.util.ScriptReader;
-
 import com.lealone.plugins.bench.DbType;
 import com.lealone.plugins.bench.tpcc.config.TpccConfig;
 import com.lealone.plugins.bench.tpcc.util.Util;
@@ -28,6 +27,11 @@ import com.lealone.plugins.bench.tpcc.util.Util;
 public class TpccLoad extends TpccConfig {
 
     public static void main(String[] args, String... sqlScripts) {
+        for (int i = 0; i < 1; i++)
+            run(args, sqlScripts);
+    }
+
+    public static void run(String[] args, String... sqlScripts) {
         dumpInformation(args);
         TpccLoad tpccLoad = new TpccLoad();
         tpccLoad.parseArgs(args);
@@ -106,7 +110,7 @@ public class TpccLoad extends TpccConfig {
         System.out.printf("*** Java TPC-C Data Loader version " + VERSION + " ***\n");
         System.out.printf("********************************************\n");
 
-        final long start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         System.out.println("Execution time start: " + start);
 
         if (dbUser == null) {
@@ -147,7 +151,7 @@ public class TpccLoad extends TpccConfig {
 
         initConnections();
         LoadConfig loadConfig = createLoadConfig();
-
+        start = System.currentTimeMillis();
         System.out.printf("TPCC Data Load Started...\n");
 
         try {
@@ -202,10 +206,17 @@ public class TpccLoad extends TpccConfig {
     }
 
     private void initConnections() {
-        connections = new Connection[numConn];
-        for (int i = 0; i < numConn; i++) {
-            LoadConfig loadConfig = createLoadConfig();
-            connections[i] = loadConfig.getConn();
+        if (connections == null) {
+            connections = new Connection[numConn];
+            for (int i = 0; i < numConn; i++) {
+                LoadConfig loadConfig = createLoadConfig();
+                connections[i] = loadConfig.getConn();
+                try {
+                    connections[i].setAutoCommit(true);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         executor = Executors.newFixedThreadPool(numConn);
     }

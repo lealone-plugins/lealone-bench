@@ -8,8 +8,11 @@ package com.lealone.plugins.bench.cs.index.update;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import com.lealone.client.jdbc.JdbcPreparedStatement;
+import com.lealone.client.jdbc.JdbcStatement;
 import com.lealone.plugins.bench.DbType;
 import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 
@@ -40,9 +43,9 @@ public class IndexUpdateBTest extends ClientServerWriteBTest {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
         createTable(statement, false);
-        createIndex(statement, "f1", false);
-        createIndex(statement, "f2", false);
-        createIndex(statement, "f2,f1", false);
+        // createIndex(statement, "f1", false);
+        // createIndex(statement, "f2", false);
+        // createIndex(statement, "f2,f1", false);
         close(statement, conn);
     }
 
@@ -54,8 +57,8 @@ public class IndexUpdateBTest extends ClientServerWriteBTest {
     }
 
     private void run0(Connection conn, Statement statement) throws Exception {
-        // insert(statement);
-        preparedInsert(conn, statement);
+        insert(statement);
+        // preparedInsert(conn, statement);
         // append(statement);
         // preparedAppend(conn, statement);
         // update(statement);
@@ -103,6 +106,8 @@ public class IndexUpdateBTest extends ClientServerWriteBTest {
 
     private void insert0(Statement statement, String method) throws Exception {
         long t1 = System.nanoTime();
+        JdbcStatement ps = (JdbcStatement) statement;
+        CountDownLatch latch = new CountDownLatch(rowCount);
         for (int i = 1; i <= rowCount; i++) {
             StringBuilder sql = new StringBuilder();
             sql.append("INSERT INTO ").append(tableName).append("(pk, f1, f2) VALUES(");
@@ -110,27 +115,41 @@ public class IndexUpdateBTest extends ClientServerWriteBTest {
             int f = useRandom ? random.nextInt(rowCount) : i * 10;
             sql.append(f).append(',');
             sql.append("'v-").append(f).append("')");
-            statement.addBatch(sql.toString());
-            if (i % batchCount == 0)
-                statement.executeBatch();
+            // statement.addBatch(sql.toString());
+            ps.executeUpdateAsync(sql.toString()).onComplete(ar -> {
+                latch.countDown();
+                if (latch.getCount() % batchCount == 0)
+                    System.out.println(latch.getCount());
+            });
+            // ps.addBatch();
+            // if (i % batchCount == 0)
+            // ps.executeBatch();
         }
+        latch.await();
+        ps.close();
         println(method, t1);
     }
 
     private void preparedInsert0(Connection conn, String method) throws Exception {
         long t1 = System.nanoTime();
         String sql = "INSERT INTO " + tableName + "(pk, f1, f2) VALUES(?,?,?)";
-        PreparedStatement ps = conn.prepareStatement(sql);
+        CountDownLatch latch = new CountDownLatch(rowCount);
+        JdbcPreparedStatement ps = (JdbcPreparedStatement) conn.prepareStatement(sql);
         for (int i = 1; i <= rowCount; i++) {
             ps.setInt(1, i);
             int f = useRandom ? random.nextInt(rowCount) : i * 10;
             ps.setInt(2, f);
             ps.setString(3, "v-" + f);
-            // ps.executeUpdate();
-            ps.addBatch();
-            if (i % batchCount == 0)
-                ps.executeBatch();
+            ps.executeUpdateAsync().onComplete(ar -> {
+                latch.countDown();
+                if (latch.getCount() % batchCount == 0)
+                    System.out.println(latch.getCount());
+            });
+            // ps.addBatch();
+            // if (i % batchCount == 0)
+            // ps.executeBatch();
         }
+        latch.await();
         ps.close();
         println(method, t1);
     }

@@ -81,7 +81,8 @@ public class JdbcStatementLoader implements RecordLoader {
             synchronized (conn) {
                 Statement stmt = conn.createStatement();
                 stmt.execute(sql);
-                conn.commit();
+                if (!conn.getAutoCommit())
+                    conn.commit();
                 stmt.close();
             }
         } catch (Exception e) {

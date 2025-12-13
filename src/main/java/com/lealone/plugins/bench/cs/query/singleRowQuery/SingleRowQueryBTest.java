@@ -20,6 +20,7 @@ public abstract class SingleRowQueryBTest extends ClientServerQueryBTest {
         innerLoop = 10;
         rowCount = 10000;
         // prepare = true;
+        embedded = true;
     }
 
     @Override

@@ -18,7 +18,6 @@ import java.util.Properties;
 
 import com.lealone.common.logging.Logger;
 import com.lealone.common.logging.LoggerFactory;
-
 import com.lealone.plugins.bench.DbType;
 
 public abstract class TpccConfig implements TpccConstants {
@@ -78,7 +77,7 @@ public abstract class TpccConfig implements TpccConstants {
     }
 
     public Connection getConnection() {
-        logger.info("Connection to database: driver: " + javaDriver + " url: " + jdbcUrl);
+        // logger.info("Connection to database: driver: " + javaDriver + " url: " + jdbcUrl);
         Connection conn;
         try {
             Properties prop = new Properties();
@@ -146,6 +145,8 @@ public abstract class TpccConfig implements TpccConstants {
 
     public static void dumpInformation(String[] argv) {
         logger.info("TPCC version " + VERSION + " Number of Arguments: " + argv.length);
+        logger.info("jvm pid: {}",
+                java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
         // dump information about the environment we are running in
         String sysProp[] = { "os.name", "os.arch", "os.version", "java.runtime.name", "java.vm.version",
                 "java.library.path" };

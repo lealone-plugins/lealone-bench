@@ -8,10 +8,9 @@ package com.lealone.plugins.bench.embed.storage;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.lealone.db.scheduler.EmbeddedScheduler;
+import com.lealone.db.scheduler.InternalScheduler;
 import com.lealone.db.scheduler.Scheduler;
 import com.lealone.db.scheduler.SchedulerFactory;
-import com.lealone.db.value.ValueInt;
-import com.lealone.db.value.ValueString;
 import com.lealone.storage.aose.btree.BTreeMap;
 import com.lealone.storage.aose.btree.page.PageOperations.Put;
 import com.lealone.storage.page.PageOperation;
@@ -59,8 +58,8 @@ public class BTreeAsyncBTest extends StorageMapBTest {
         initConfig();
         createPageOperationHandlers();
         openStorage();
-        map = btreeMap = storage.openBTreeMap(BTreeAsyncBTest.class.getSimpleName(), ValueInt.type,
-                ValueString.type, null);
+        map = btreeMap = storage.openBTreeMap(BTreeAsyncBTest.class.getSimpleName(), getIntType(),
+                getStringType(), null);
     }
 
     private void createPageOperationHandlers() {
@@ -100,16 +99,16 @@ public class BTreeAsyncBTest extends StorageMapBTest {
 
     private class AsyncBTreeBenchTestTask extends StorageMapBenchTestTask implements PageOperation {
 
-        Scheduler currentScheduler;
+        InternalScheduler currentScheduler;
 
         AsyncBTreeBenchTestTask(int start, int end) throws Exception {
             super(start, end);
-            currentScheduler = schedulerFactory.getScheduler();
+            currentScheduler = (InternalScheduler) schedulerFactory.getScheduler();
             currentScheduler.handlePageOperation(this);
         }
 
         @Override
-        public PageOperationResult run(Scheduler currentScheduler) {
+        public PageOperationResult run(InternalScheduler currentScheduler) {
             this.currentScheduler = currentScheduler;
             super.run();
             return PageOperationResult.SUCCEEDED;

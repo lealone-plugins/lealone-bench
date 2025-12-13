@@ -7,19 +7,40 @@ package com.lealone.plugins.bench.cs.write.batchInsert;
 
 import java.sql.Connection;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 
 public abstract class BatchInsertBTest extends ClientServerWriteBTest {
 
+    protected boolean useRandom;
+
     protected BatchInsertBTest() {
+        benchTestLoop = 10;
         batch = true;
         outerLoop = 30;
-        threadCount = 16;
-        sqlCountPerInnerLoop = 50;
+        threadCount = 64;
+        sqlCountPerInnerLoop = 400;
         innerLoop = 30;
         // printInnerLoopResult = true;
+        prepare = true;
+        useRandom = true;
+
+        if (useRandom) {
+            int size = (outerLoop + 2) * threadCount * sqlCountPerInnerLoop * innerLoop;
+            ids = new Integer[size];
+            for (int i = 0; i < size; i++) {
+                ids[i] = i + 1;
+            }
+            List<Integer> list = Arrays.asList(ids);
+            Collections.shuffle(list);
+            list.toArray(ids);
+        }
     }
+
+    Integer[] ids;
 
     @Override
     protected void init() throws Exception {
@@ -50,7 +71,10 @@ public abstract class BatchInsertBTest extends ClientServerWriteBTest {
 
         @Override
         protected void prepare() throws Exception {
-            ps.setInt(1, id.incrementAndGet());
+            int v = id.incrementAndGet();
+            if (useRandom)
+                v = ids[v - 1];
+            ps.setInt(1, v);
         }
     }
 }

@@ -5,6 +5,8 @@
  */
 package com.lealone.plugins.bench.embed.storage.psm;
 
+import org.junit.Test;
+
 import com.lealone.storage.aose.AOStorageEngine;
 import com.lealone.storage.aose.btree.page.PageStorageMode;
 import com.lealone.test.sql.SqlTestBase;
@@ -25,7 +27,7 @@ public class PageStorageModeSqlBTest extends SqlTestBase {
     int columnCount = 20;
     int pageSize = 1024 * 1024;
 
-    // @Test
+    @Test
     public void run() throws Exception {
         for (int i = 0; i < 20; i++) {
             System.out.println();
@@ -45,7 +47,7 @@ public class PageStorageModeSqlBTest extends SqlTestBase {
         for (int col = 1; col <= columnCount; col++) {
             sql.append(", f").append(col).append(" varchar");
         }
-        sql.append(") Engine ").append(AOStorageEngine.NAME).append(" PARAMETERS(pageStorageMode='")
+        sql.append(") Engine ").append(AOStorageEngine.NAME).append(" PARAMETERS(PAGE_STORAGE_MODE='")
                 .append(pageStorageMode).append("')");
         executeUpdate(sql.toString());
     }

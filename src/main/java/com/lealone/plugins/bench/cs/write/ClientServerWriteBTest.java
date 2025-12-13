@@ -8,7 +8,6 @@ package com.lealone.plugins.bench.cs.write;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.lealone.client.jdbc.JdbcPreparedStatement;
@@ -71,14 +70,15 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
             if (!autoCommit)
                 conn.commit();
             latch.await();
+            endTime = System.nanoTime();
             printInnerLoopResult(t1);
         }
 
         protected void executeUpdate(Statement statement) throws Exception {
             long t1 = System.nanoTime();
-            if (!autoCommit)
-                conn.setAutoCommit(false);
             for (int j = 0; j < innerLoop; j++) {
+                if (!autoCommit)
+                    conn.setAutoCommit(false);
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     statement.executeUpdate(nextSql());
                     if (counterTop.decrementAndGet() == 0) {
@@ -86,9 +86,9 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
                         latchTop.countDown();
                     }
                 }
+                if (!autoCommit)
+                    conn.commit();
             }
-            if (!autoCommit)
-                conn.commit();
             printInnerLoopResult(t1);
         }
 
@@ -158,7 +158,7 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
             if (printInnerLoopResult) {
                 long t2 = System.nanoTime();
                 System.out.println(getBTestName() + " sql count: " + (innerLoop * sqlCountPerInnerLoop) //
-                        + " total time: " + TimeUnit.NANOSECONDS.toMillis(t2 - t1) + " ms");
+                        + " total time: " + toMillis(t2 - t1) + " ms");
             }
         }
     }

@@ -21,7 +21,7 @@ public class LoadConfig {
     private LoadType loadType = LoadType.JDBC_PREPARED_STATEMENT;
     private Connection conn;
     private boolean jdbcInsertIgnore = false;
-    private int jdbcBatchSize = 200;
+    private int jdbcBatchSize = 100;
 
     public RecordLoader createLoader(String tableName, String columnName[]) throws IOException {
         switch (loadType) {

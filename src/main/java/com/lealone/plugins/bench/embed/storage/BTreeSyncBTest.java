@@ -5,9 +5,6 @@
  */
 package com.lealone.plugins.bench.embed.storage;
 
-import com.lealone.db.value.ValueInt;
-import com.lealone.db.value.ValueString;
-
 public class BTreeSyncBTest extends StorageMapBTest {
 
     public static void main(String[] args) throws Exception {
@@ -20,6 +17,7 @@ public class BTreeSyncBTest extends StorageMapBTest {
             return;
         initConfig();
         openStorage();
-        map = storage.openBTreeMap(BTreeSyncBTest.class.getSimpleName(), ValueInt.type, ValueString.type, null);
+        map = storage.openBTreeMap(BTreeSyncBTest.class.getSimpleName(), getIntType(), getStringType(),
+                null);
     }
 }
