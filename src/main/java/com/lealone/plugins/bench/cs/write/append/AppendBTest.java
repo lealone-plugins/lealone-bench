@@ -13,15 +13,15 @@ import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 public abstract class AppendBTest extends ClientServerWriteBTest {
 
     public AppendBTest() {
-        benchTestLoop = 10;
+        benchTestLoop = 20;
         outerLoop = 15;
-        threadCount = 48;
+        threadCount = 16;
         sqlCountPerInnerLoop = 10;
         innerLoop = 20;
         // prepare = true;
         reinit = false;
         // autoCommit = false;
-        embedded = true;
+        // embedded = true;
     }
 
     @Override

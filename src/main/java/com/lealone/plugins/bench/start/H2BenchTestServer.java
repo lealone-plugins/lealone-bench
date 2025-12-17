@@ -38,7 +38,7 @@ public class H2BenchTestServer {
 
     public static void setH2Properties() {
         String testDir = BenchTest.BENCH_TEST_BASE_DIR;
-        testDir = "F:/target";
+        // testDir = "F:/target";
         System.setProperty("h2.queryCacheSize", "0");
         // System.setProperty("DATABASE_TO_UPPER", "false");
         System.setProperty("h2.lobInDatabase", "false");

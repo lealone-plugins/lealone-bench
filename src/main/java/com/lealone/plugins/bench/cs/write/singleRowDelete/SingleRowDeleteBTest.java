@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.write.singleRowUpdate;
+package com.lealone.plugins.bench.cs.write.singleRowDelete;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,32 +11,31 @@ import java.sql.Statement;
 
 import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 
-//-XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xmx800M
-public abstract class SingleRowUpdateBTest extends ClientServerWriteBTest {
+public abstract class SingleRowDeleteBTest extends ClientServerWriteBTest {
 
-    protected SingleRowUpdateBTest() {
+    protected SingleRowDeleteBTest() {
         benchTestLoop = 20;
         outerLoop = 15;
         threadCount = 16;
         sqlCountPerInnerLoop = 10;
         innerLoop = 20;
         // prepare = true;
-        reinit = false;
+        // reinit = false;
         // autoCommit = false;
         // embedded = true;
 
-        rowCount = 10000;
+        rowCount = 30000;
     }
 
     @Override
     protected void init() throws Exception {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
-        statement.executeUpdate("drop table if exists SingleRowUpdateBTest");
-        String sql = "create table if not exists SingleRowUpdateBTest(pk int primary key, f1 int)";
+        statement.executeUpdate("drop table if exists SingleRowDeleteBTest");
+        String sql = "create table if not exists SingleRowDeleteBTest(pk int primary key, f1 int)";
         statement.executeUpdate(sql);
 
-        sql = "insert into SingleRowUpdateBTest values(?,1)";
+        sql = "insert into SingleRowDeleteBTest values(?,1)";
         PreparedStatement ps = conn.prepareStatement(sql);
 
         for (int row = 1; row <= rowCount; row++) {
@@ -59,22 +58,19 @@ public abstract class SingleRowUpdateBTest extends ClientServerWriteBTest {
 
         UpdateThread(int id, Connection conn) {
             super(id, conn);
-            prepareStatement("update SingleRowUpdateBTest set f1=? where pk=?");
+            prepareStatement("delete from SingleRowDeleteBTest where pk=?");
         }
 
         @Override
         protected String nextSql() {
             int pk = random.nextInt(rowCount);
-            int f1 = pk * 10;
-            return "update SingleRowUpdateBTest set f1=" + f1 + " where pk=" + pk;
+            return "delete from SingleRowDeleteBTest where pk=" + pk;
         }
 
         @Override
         protected void prepare() throws Exception {
             int pk = random.nextInt(rowCount);
-            int f1 = pk * 10;
             ps.setInt(1, pk);
-            ps.setInt(2, f1);
         }
     }
 }

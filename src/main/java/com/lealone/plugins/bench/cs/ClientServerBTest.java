@@ -11,12 +11,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -34,6 +31,13 @@ public abstract class ClientServerBTest extends BenchTest {
     static {
         System.setProperty("lealone.server.cached.objects", "10000000");
         System.setProperty("h2.serverCachedObjects", "10000000");
+        disableAbandonedConnectionCleanup();
+    }
+
+    public static void disableAbandonedConnectionCleanup() {
+        // 不启动mysql-cj-abandoned-connection-cleanup线程
+        System.setProperty(com.mysql.cj.conf.PropertyDefinitions.SYSP_disableAbandonedConnectionCleanup,
+                "true");
     }
 
     protected DbType dbType;
@@ -53,9 +57,6 @@ public abstract class ClientServerBTest extends BenchTest {
 
     protected AtomicInteger id = new AtomicInteger();
     protected Random random = new Random();
-
-    protected AtomicInteger counterTop = new AtomicInteger(sqlCountPerInnerLoop * innerLoop);
-    protected CountDownLatch latchTop = new CountDownLatch(1);
 
     protected ExecutorService executorService;
 
@@ -94,8 +95,12 @@ public abstract class ClientServerBTest extends BenchTest {
     }
 
     public void run() throws Exception {
+        // 以下两种方式都不如直接用Thread跑起来快
         // 把一个Runnable任务扔给Executors.newFixedThreadPool()跑要比直接用Thread慢很多
         // executorService = Executors.newFixedThreadPool(threadCount);
+        // ThreadFactory factory = Thread.ofVirtual().name("vt-", 1).factory();
+        // executorService = Executors.newThreadPerTaskExecutor(factory);
+
         Connection[] conns = new Connection[threadCount];
         for (int i = 0; i < threadCount; i++) {
             Connection conn = getConnection();
@@ -106,7 +111,7 @@ public abstract class ClientServerBTest extends BenchTest {
                 id.set(0);
                 init();
             }
-            run(threadCount, conns);
+            runOuterLoop(threadCount, conns);
         }
         for (int i = 0; i < threadCount; i++) {
             close(conns[i]);
@@ -114,53 +119,31 @@ public abstract class ClientServerBTest extends BenchTest {
         // executorService.shutdown();
     }
 
-    protected void run(int threadCount, Connection[] conns) throws Exception {
-        // Connection[] conns = new Connection[threadCount];
-        // for (int i = 0; i < threadCount; i++) {
-        // Connection conn = getConnection();
-        // conns[i] = conn;
-        // }
-
-        // if (warmUpEnabled()) {
-        // for (int i = 0; i < 2; i++) {
-        // run(threadCount, conns, true);
-        // }
-        // }
+    protected void runOuterLoop(int threadCount, Connection[] conns) throws Exception {
         long t1 = System.currentTimeMillis();
         for (int i = 0; i < outerLoop; i++) {
-            run(threadCount, conns, false);
+            run(threadCount, conns);
         }
         long t2 = System.currentTimeMillis();
         System.out.println(getBTestName() + " sql count: "
                 + (outerLoop * threadCount * innerLoop * sqlCountPerInnerLoop) + ", total time: "
                 + (t2 - t1) + " ms");
-        // for (int i = 0; i < threadCount; i++) {
-        // close(conns[i]);
-        // }
     }
 
-    protected boolean warmUpEnabled() {
-        return true;
-    }
-
-    protected void run(int threadCount, Connection[] conns, boolean warmUp) throws Exception {
+    protected void run(int threadCount, Connection[] conns) throws Exception {
         ClientServerBTestThread[] threads = new ClientServerBTestThread[threadCount];
         for (int i = 0; i < threadCount; i++) {
             threads[i] = createBTestThread(i, conns[i]);
         }
-        counterTop.set(threadCount * sqlCountPerInnerLoop * innerLoop);
-        latchTop = new CountDownLatch(1);
         long t1 = System.currentTimeMillis();
-        long totalTime = 0;
-        @SuppressWarnings("unused")
-        ArrayList<Future<?>> futures = new ArrayList<>(threadCount);
+        // ArrayList<Future<?>> futures = new ArrayList<>(threadCount);
         for (int i = 0; i < threadCount; i++) {
             threads[i].setCloseConn(false);
             threads[i].start();
             // futures.add(executorService.submit(threads[i]));
         }
 
-        // latchTop.await();
+        long totalTime = 0;
         for (int i = 0; i < threadCount; i++) {
             // futures.get(i).get();
             threads[i].join();
@@ -170,19 +153,13 @@ public abstract class ClientServerBTest extends BenchTest {
             // + toMillis(threads[i].getStartTime()) + ", end time: " //
             // + toMillis(threads[i].getEndTime()) + ", total time: " //
             // + toMillis(threads[i].getTotalTime()));
-
-            // System.out.println(getBTestName() + " sql count: " + (innerLoop * sqlCountPerInnerLoop)
-            // + " start: " + threads[i].t1 + " end: " + threads[i].t2 + ", thread livecycle: "
-            // + (threads[i].t2 - threads[i].t1) + " ms, sql execute time: "
-            // + toMillis(threads[i].getTotalTime()) + " ms");
         }
         long t2 = System.currentTimeMillis();
         long avgTime = toMillis(totalTime / threadCount);
         totalTime = (t2 - t1);
-        System.out.println(
-                getBTestName() + " sql count: " + (threadCount * innerLoop * sqlCountPerInnerLoop)
-                        + ", thread count: " + threadCount + ", avg time: " + avgTime + " ms"
-                        + ", total time: " + totalTime + " ms" + (warmUp ? " (***WarmUp***)" : ""));
+        System.out.println(getBTestName() + " sql count: "
+                + (threadCount * innerLoop * sqlCountPerInnerLoop) + ", thread count: " + threadCount
+                + ", avg time: " + avgTime + " ms" + ", total time: " + totalTime + " ms");
     }
 
     protected long toMillis(long duration) {
@@ -194,6 +171,8 @@ public abstract class ClientServerBTest extends BenchTest {
     }
 
     protected abstract class ClientServerBTestThread extends Thread {
+
+        protected final Random random = new Random();
 
         protected Connection conn;
         protected Statement stmt;
@@ -375,7 +354,7 @@ public abstract class ClientServerBTest extends BenchTest {
         info.put("synchronous", "NORMAL"); // 支持多线程写
 
         SQLiteConfig config = new SQLiteConfig();
-        config.setSharedCache(true); // 关闭共享缓存（MULTITHREADED模式建议关闭）
+        // config.setSharedCache(false);
         config.setJournalMode(SQLiteConfig.JournalMode.WAL);
         config.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
         info = config.toProperties();
@@ -396,9 +375,11 @@ public abstract class ClientServerBTest extends BenchTest {
     }
 
     public static Connection getLealoneConnection(boolean async) throws Exception {
+        // async = true;
         String url = getLealoneUrl();
         url += "&" + ConnectionSetting.IS_SHARED + "=false";
-        // url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=16";
+        url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=8";
+        url += "&" + ConnectionSetting.MAX_PACKET_COUNT_PER_LOOP + "=50";
         url += "&" + ConnectionSetting.NET_FACTORY_NAME + "=" + (async ? "nio" : "bio");
         return getConnection(url, "root", "");
     }

@@ -86,6 +86,7 @@ public class LealoneTransactionBTest extends TransactionBTest {
             Transaction t2 = te.beginTransaction();
             TransactionMap<Integer, String> m = map.getInstance(t2);
             m.tryUpdate(key, value);
+            // m.put(key, value);
             t2.commit();
             // System.out.println(getName() + " key:" + key);
             notifyOperationComplete();

@@ -61,9 +61,6 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
                             endTime = System.nanoTime();
                             latch.countDown();
                         }
-                        if (counterTop.decrementAndGet() == 0) {
-                            latchTop.countDown();
-                        }
                     });
                 }
             }
@@ -81,10 +78,6 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
                     conn.setAutoCommit(false);
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     statement.executeUpdate(nextSql());
-                    if (counterTop.decrementAndGet() == 0) {
-                        // endTime = System.nanoTime();
-                        latchTop.countDown();
-                    }
                 }
                 if (!autoCommit)
                     conn.commit();

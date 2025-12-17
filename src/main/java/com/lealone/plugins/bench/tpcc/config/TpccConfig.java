@@ -8,6 +8,7 @@ package com.lealone.plugins.bench.tpcc.config;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -128,7 +129,7 @@ public abstract class TpccConfig implements TpccConstants {
     public static URL getConfigURL(String configUrl) {
         URL url;
         try {
-            url = new URL(configUrl);
+            url = new URI(configUrl).toURL();
             url.openStream().close(); // catches well-formed but bogus URLs
         } catch (Exception e) {
             try {
