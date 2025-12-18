@@ -18,18 +18,23 @@ public abstract class BatchInsertBTest extends ClientServerWriteBTest {
     protected boolean useRandom;
 
     protected BatchInsertBTest() {
-        benchTestLoop = 10;
         batch = true;
-        outerLoop = 30;
-        threadCount = 64;
-        sqlCountPerInnerLoop = 400;
-        innerLoop = 30;
-        // printInnerLoopResult = true;
-        prepare = true;
-        useRandom = true;
+        // prepare = true;
+        // useRandom = true;
+
+        benchTestLoop = 20;
+        outerLoop = 15;
+
+        threadCount = 48;
+        innerLoop = 10;
+        sqlCountPerInnerLoop = 20;
+        reinit = false;
+        // autoCommit = false;
+        // embedded = true;
+        // useVirtualThread = true;
 
         if (useRandom) {
-            int size = (outerLoop + 2) * threadCount * sqlCountPerInnerLoop * innerLoop;
+            int size = benchTestLoop * outerLoop * threadCount * sqlCountPerInnerLoop * innerLoop;
             ids = new Integer[size];
             for (int i = 0; i < size; i++) {
                 ids[i] = i + 1;

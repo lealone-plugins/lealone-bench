@@ -15,13 +15,18 @@ public abstract class AppendBTest extends ClientServerWriteBTest {
     public AppendBTest() {
         benchTestLoop = 20;
         outerLoop = 15;
-        threadCount = 16;
-        sqlCountPerInnerLoop = 10;
-        innerLoop = 20;
+        // threadCount = 100;
+        // sqlCountPerInnerLoop = 8;
+        // innerLoop = 4;
+
+        threadCount = 48 * 2;
+        innerLoop = 10;
+        sqlCountPerInnerLoop = 20 / 2;
         // prepare = true;
         reinit = false;
         // autoCommit = false;
         // embedded = true;
+        useVirtualThread = true;
     }
 
     @Override
