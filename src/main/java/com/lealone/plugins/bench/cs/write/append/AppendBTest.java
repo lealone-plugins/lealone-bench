@@ -19,28 +19,29 @@ public abstract class AppendBTest extends ClientServerWriteBTest {
         // sqlCountPerInnerLoop = 8;
         // innerLoop = 4;
 
-        threadCount = 48 * 2;
+        threadCount = 16;
         innerLoop = 10;
-        sqlCountPerInnerLoop = 20 / 2;
+        sqlCountPerInnerLoop = 20;
         // prepare = true;
         reinit = false;
         // autoCommit = false;
         // embedded = true;
-        useVirtualThread = true;
+        // useVirtualThread = true;
     }
 
     @Override
     protected void init() throws Exception {
         Connection conn = getConnection();
         Statement statement = conn.createStatement();
+        // statement.executeUpdate("TRUNCATE table AppendBTest");
         statement.executeUpdate("drop table if exists AppendBTest");
         String sql = "create table if not exists AppendBTest(name varchar(20), f1 int, f2 bigint)";
         statement.executeUpdate(sql);
-        for (int i = 0; i < 0; i++) {
-            statement.executeUpdate("drop table if exists AppendBTest" + i);
-            sql = "create table if not exists AppendBTest" + i + "(name varchar(20), f1 int, f2 bigint)";
-            statement.executeUpdate(sql);
-        }
+        // for (int i = 0; i < 0; i++) {
+        // statement.executeUpdate("drop table if exists AppendBTest" + i);
+        // sql = "create table if not exists AppendBTest" + i + "(name varchar(20), f1 int, f2 bigint)";
+        // statement.executeUpdate(sql);
+        // }
         close(statement, conn);
     }
 

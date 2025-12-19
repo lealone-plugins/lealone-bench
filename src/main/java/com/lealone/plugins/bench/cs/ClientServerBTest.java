@@ -374,7 +374,7 @@ public abstract class ClientServerBTest extends BenchTest {
 
     public static String getLealoneUrl() {
         String url = "jdbc:lealone:tcp://localhost:" + Constants.DEFAULT_TCP_PORT + "/lealone";
-        url += "?" + ConnectionSetting.NETWORK_TIMEOUT + "=" + Integer.MAX_VALUE;
+        url += "?ANALYZE_AUTO=0&" + ConnectionSetting.NETWORK_TIMEOUT + "=" + Integer.MAX_VALUE;
         return url;
     }
 
@@ -406,7 +406,7 @@ public abstract class ClientServerBTest extends BenchTest {
         try {
             Statement statement = conn.createStatement();
             statement.executeUpdate("set QUERY_CACHE_SIZE 0");
-            // statement.executeUpdate("set ANALYZE_AUTO 0");
+            statement.executeUpdate("set ANALYZE_AUTO 0");
             // statement.executeUpdate("set OPTIMIZE_REUSE_RESULTS 0");
             statement.close();
         } catch (Exception e) {

@@ -36,7 +36,7 @@ public class AsyncMySQLSingleRowUpdateBTest {
             // clients[i] = getSqlClient();
             clients[i] = clients[0]; // 每个线程一个SqlClient或共用一个SqlClient，性能没区别
         }
-        for (int n = 0; n < 50; n++) {
+        for (int n = 0; n < 260; n++) {
             Thread[] threads = new Thread[threadCount];
             Test[] tests = new Test[threadCount];
             for (int i = 0; i < threadCount; i++) {
@@ -107,6 +107,8 @@ public class AsyncMySQLSingleRowUpdateBTest {
                 int pk = random.nextInt(rowCount);
                 int f1 = pk * 10;
                 String sql = "update SingleRowUpdateBTest set f1=" + f1 + " where pk=" + pk;
+
+                // sql = "select * from SingleRowUpdateBTest where pk=" + pk;
 
                 client.query(sql).execute().onComplete(ar -> {
                     if (!ar.succeeded()) {

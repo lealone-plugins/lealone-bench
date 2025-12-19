@@ -6,7 +6,6 @@
 package com.lealone.plugins.bench.misc.mongodb;
 
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -26,8 +25,8 @@ public abstract class DocDatabaseBTest {
     final int clientCount = 2; // 超过cpu核数性能会下降
     final int rowCount = 10000; // 总记录数
 
-    int threadCount = 48;
-    int outerLoop = 30;
+    int threadCount = 16;
+    int outerLoop = 300;
     int innerLoop = 200;
     String operation;
 
@@ -68,11 +67,11 @@ public abstract class DocDatabaseBTest {
             threads[i] = new Thread(() -> {
                 long time = benchTest(index);
                 totalTime.addAndGet(time);
-                String tn = "Thread-";
-                if (index < 10)
-                    tn = "Thread-0";
-                System.out.println(tn + index + ", document count: " + (innerLoop) + ", " + operation
-                        + " document time: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+                // String tn = "Thread-";
+                // if (index < 10)
+                // tn = "Thread-0";
+                // System.out.println(tn + index + ", document count: " + (innerLoop) + ", " + operation
+                // + " document time: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
             });
         }
         long t1 = System.currentTimeMillis();
@@ -90,8 +89,8 @@ public abstract class DocDatabaseBTest {
         long total = t2 - t1;
         long avg = totalTime.get() / 1000 / 1000 / threadCount;
         System.out.println(getClass().getSimpleName() + " thread count: " + (threadCount)
-                + ", document count: " + (threadCount * innerLoop) + ", total time: " + total + " ms"
-                + ", avg time: " + avg + " ms");
+                + ", document count: " + (threadCount * innerLoop) + ", avg time: " + avg + " ms"
+                + ", total time: " + total + " ms");
     }
 
     public static void testDocument() {

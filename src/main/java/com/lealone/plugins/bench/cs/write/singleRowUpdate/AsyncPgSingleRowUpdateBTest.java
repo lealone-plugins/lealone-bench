@@ -36,7 +36,7 @@ public class AsyncPgSingleRowUpdateBTest {
             // clients[i] = getSqlClient();
             clients[i] = clients[0]; // 每个线程一个SqlClient或共用一个SqlClient，性能没区别
         }
-        for (int n = 0; n < 50; n++) {
+        for (int n = 0; n < 60; n++) {
             Thread[] threads = new Thread[threadCount];
             Test[] tests = new Test[threadCount];
             for (int i = 0; i < threadCount; i++) {
