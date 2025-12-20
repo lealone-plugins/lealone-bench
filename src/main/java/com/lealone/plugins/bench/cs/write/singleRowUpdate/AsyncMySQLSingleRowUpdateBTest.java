@@ -10,6 +10,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.mysqlclient.MySQLBuilder;
@@ -28,7 +29,7 @@ public class AsyncMySQLSingleRowUpdateBTest {
 
     public static void main(String[] args) throws InterruptedException {
         VertxOptions vertxOptions = new VertxOptions();
-        vertxOptions.setEventLoopPoolSize(8);
+        vertxOptions.setEventLoopPoolSize(threadCount);
         Vertx vertx = Vertx.vertx(vertxOptions);
         SqlClient[] clients = new SqlClient[threadCount];
         clients[0] = getSqlClient(vertx);
@@ -45,11 +46,13 @@ public class AsyncMySQLSingleRowUpdateBTest {
             }
             long t1 = System.currentTimeMillis();
             for (int i = 0; i < threadCount; i++) {
-                threads[i].start();
+                // threads[i].start();
+                vertx.deployVerticle(tests[i]);
             }
             long totalTime = 0;
             for (int i = 0; i < threadCount; i++) {
-                threads[i].join();
+                // threads[i].join();
+                tests[i].await();
                 totalTime += tests[i].getTotalTime();
             }
             long t2 = System.currentTimeMillis();
@@ -81,13 +84,14 @@ public class AsyncMySQLSingleRowUpdateBTest {
         return client;
     }
 
-    public static class Test implements Runnable {
+    public static class Test extends AbstractVerticle implements Runnable {
         long startTime;
         long endTime;
         SqlClient client;
         Random random = new Random();
         int rowCount = 10000;
         int id;
+        CountDownLatch latch = new CountDownLatch(1);
 
         public Test(SqlClient client, int id) {
             this.client = client;
@@ -99,9 +103,21 @@ public class AsyncMySQLSingleRowUpdateBTest {
         }
 
         @Override
+        public void start() throws Exception {
+            run();
+        }
+
+        public void await() {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
         public void run() {
             AtomicInteger counter = new AtomicInteger(sqlCount);
-            CountDownLatch latch = new CountDownLatch(1);
             startTime = System.nanoTime();
             for (int i = 0; i < sqlCount; i++) {
                 int pk = random.nextInt(rowCount);
@@ -119,11 +135,6 @@ public class AsyncMySQLSingleRowUpdateBTest {
                         latch.countDown();
                     }
                 });
-            }
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
             // System.out.println("Thread-" + id + " sql count: " + sqlCount + ", time: "
             // + (endTime - startTime) / 1000 / 1000 + " ms");

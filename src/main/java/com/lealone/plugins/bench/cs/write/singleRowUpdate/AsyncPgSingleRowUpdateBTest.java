@@ -10,6 +10,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.pgclient.PgBuilder;
@@ -28,7 +29,7 @@ public class AsyncPgSingleRowUpdateBTest {
 
     public static void main(String[] args) throws InterruptedException {
         VertxOptions vertxOptions = new VertxOptions();
-        vertxOptions.setEventLoopPoolSize(8);
+        vertxOptions.setEventLoopPoolSize(threadCount);
         Vertx vertx = Vertx.vertx(vertxOptions);
         SqlClient[] clients = new SqlClient[threadCount];
         clients[0] = getSqlClient(vertx);
@@ -36,7 +37,7 @@ public class AsyncPgSingleRowUpdateBTest {
             // clients[i] = getSqlClient();
             clients[i] = clients[0]; // 每个线程一个SqlClient或共用一个SqlClient，性能没区别
         }
-        for (int n = 0; n < 60; n++) {
+        for (int n = 0; n < 260; n++) {
             Thread[] threads = new Thread[threadCount];
             Test[] tests = new Test[threadCount];
             for (int i = 0; i < threadCount; i++) {
@@ -45,11 +46,13 @@ public class AsyncPgSingleRowUpdateBTest {
             }
             long t1 = System.currentTimeMillis();
             for (int i = 0; i < threadCount; i++) {
-                threads[i].start();
+                // threads[i].start();
+                vertx.deployVerticle(tests[i]);
             }
             long totalTime = 0;
             for (int i = 0; i < threadCount; i++) {
-                threads[i].join();
+                // threads[i].join();
+                tests[i].await();
                 totalTime += tests[i].getTotalTime();
             }
             long t2 = System.currentTimeMillis();
@@ -81,13 +84,14 @@ public class AsyncPgSingleRowUpdateBTest {
         return client;
     }
 
-    public static class Test implements Runnable {
+    public static class Test extends AbstractVerticle implements Runnable {
         long startTime;
         long endTime;
         SqlClient client;
         Random random = new Random();
         int rowCount = 10000;
         int id;
+        CountDownLatch latch = new CountDownLatch(1);
 
         public Test(SqlClient client, int id) {
             this.client = client;
@@ -99,14 +103,28 @@ public class AsyncPgSingleRowUpdateBTest {
         }
 
         @Override
+        public void start() throws Exception {
+            run();
+        }
+
+        public void await() {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
         public void run() {
             AtomicInteger counter = new AtomicInteger(sqlCount);
-            CountDownLatch latch = new CountDownLatch(1);
             startTime = System.nanoTime();
             for (int i = 0; i < sqlCount; i++) {
                 int pk = random.nextInt(rowCount);
                 int f1 = pk * 10;
                 String sql = "update SingleRowUpdateBTest set f1=" + f1 + " where pk=" + pk;
+
+                // sql = "select * from SingleRowUpdateBTest where pk=" + pk;
 
                 client.query(sql).execute().onComplete(ar -> {
                     if (!ar.succeeded()) {
@@ -117,11 +135,6 @@ public class AsyncPgSingleRowUpdateBTest {
                         latch.countDown();
                     }
                 });
-            }
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
             // System.out.println("Thread-" + id + " sql count: " + sqlCount + ", time: "
             // + (endTime - startTime) / 1000 / 1000 + " ms");
