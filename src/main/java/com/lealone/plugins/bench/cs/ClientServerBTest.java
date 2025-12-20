@@ -326,6 +326,13 @@ public abstract class ClientServerBTest extends BenchTest {
             }
             return conn;
         }
+        case LP: {
+            Connection conn = getLPConnection();
+            if (disableLealoneQueryCache) {
+                disableLealoneQueryCache(conn);
+            }
+            return conn;
+        }
         default:
             throw new RuntimeException();
         }
@@ -382,6 +389,16 @@ public abstract class ClientServerBTest extends BenchTest {
         Connection conn = DriverManager.getConnection(url, info);
         // conn.setAutoCommit(true);
         return conn;
+    }
+
+    public static Connection getLPConnection() throws Exception {
+        String url = "jdbc:postgresql://localhost:" + 9510 + "/postgres";
+
+        Properties info = new Properties();
+        info.put("user", "postgres");
+        info.put("password", "postgres");
+
+        return DriverManager.getConnection(url, info);
     }
 
     public static Connection getPgConnection() throws Exception {

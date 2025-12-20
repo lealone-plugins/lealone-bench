@@ -30,6 +30,7 @@ public class AsyncPgSingleRowUpdateBTest {
     public static void main(String[] args) throws InterruptedException {
         VertxOptions vertxOptions = new VertxOptions();
         vertxOptions.setEventLoopPoolSize(threadCount);
+        vertxOptions.setBlockedThreadCheckInterval(60 * 60 * 1000);
         Vertx vertx = Vertx.vertx(vertxOptions);
         SqlClient[] clients = new SqlClient[threadCount];
         clients[0] = getSqlClient(vertx);
@@ -72,6 +73,9 @@ public class AsyncPgSingleRowUpdateBTest {
     public static SqlClient getSqlClient(Vertx vertx) {
         PgConnectOptions connectOptions = new PgConnectOptions().setPort(5432).setHost("localhost")
                 .setDatabase("test").setUser("test").setPassword("test");
+
+        // connectOptions = new PgConnectOptions().setPort(9510).setHost("localhost")
+        // .setDatabase("postgres").setUser("postgres").setPassword("postgres");
 
         // Pool options
         PoolOptions poolOptions = new PoolOptions().setMaxSize(threadCount * 2);
@@ -130,6 +134,7 @@ public class AsyncPgSingleRowUpdateBTest {
                     if (!ar.succeeded()) {
                         System.out.println("Failure: " + ar.cause().getMessage());
                     }
+                    // System.out.println("counter: " + counter.get());
                     if (counter.decrementAndGet() == 0) {
                         endTime = System.nanoTime();
                         latch.countDown();
