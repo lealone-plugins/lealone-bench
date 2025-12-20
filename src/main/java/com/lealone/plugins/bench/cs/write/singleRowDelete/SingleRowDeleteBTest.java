@@ -14,16 +14,6 @@ import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 public abstract class SingleRowDeleteBTest extends ClientServerWriteBTest {
 
     protected SingleRowDeleteBTest() {
-        benchTestLoop = 20;
-        outerLoop = 15;
-        threadCount = 16;
-        sqlCountPerInnerLoop = 10;
-        innerLoop = 20;
-        // prepare = true;
-        // reinit = false;
-        // autoCommit = false;
-        // embedded = true;
-
         rowCount = 30000;
     }
 

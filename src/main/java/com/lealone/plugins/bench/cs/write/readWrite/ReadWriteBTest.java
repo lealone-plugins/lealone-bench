@@ -8,23 +8,15 @@ package com.lealone.plugins.bench.cs.write.readWrite;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.lealone.client.jdbc.JdbcStatement;
-
 import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 
 public abstract class ReadWriteBTest extends ClientServerWriteBTest {
 
     protected ReadWriteBTest() {
         rowCount = 10000;
-        benchTestLoop = 5;
-        outerLoop = 20;
-        threadCount = 48;
-        sqlCountPerInnerLoop = 20;
-        innerLoop = 10;
-        autoCommit = false;
         // printInnerLoopResult = true;
     }
 
@@ -72,7 +64,7 @@ public abstract class ReadWriteBTest extends ClientServerWriteBTest {
                 conn.setAutoCommit(false);
             JdbcStatement stmt = (JdbcStatement) statement;
             AtomicInteger counter = new AtomicInteger(sqlCountPerInnerLoop * innerLoop * 2);
-            CountDownLatch latch = new CountDownLatch(1);
+            // CountDownLatch latch = new CountDownLatch(1);
             for (int j = 0; j < innerLoop; j++) {
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     String sql = "select * from ReadWriteBTest_R where pk=" + random.nextInt(rowCount);
@@ -91,7 +83,7 @@ public abstract class ReadWriteBTest extends ClientServerWriteBTest {
                     });
                 }
             }
-            latch.await();
+            // latch.await();
             if (!autoCommit)
                 conn.commit();
             printInnerLoopResult(t1);

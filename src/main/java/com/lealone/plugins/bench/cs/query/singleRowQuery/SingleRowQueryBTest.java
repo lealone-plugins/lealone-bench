@@ -14,14 +14,7 @@ import com.lealone.plugins.bench.cs.query.ClientServerQueryBTest;
 public abstract class SingleRowQueryBTest extends ClientServerQueryBTest {
 
     public SingleRowQueryBTest() {
-        benchTestLoop = 20;
-        outerLoop = 15;
-        threadCount = 16;
-        sqlCountPerInnerLoop = 10;
-        innerLoop = 20;
         rowCount = 10000;
-        // prepare = true;
-        // embedded = true;
     }
 
     @Override

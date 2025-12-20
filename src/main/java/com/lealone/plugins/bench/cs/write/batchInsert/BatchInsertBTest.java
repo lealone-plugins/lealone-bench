@@ -22,17 +22,6 @@ public abstract class BatchInsertBTest extends ClientServerWriteBTest {
         // prepare = true;
         // useRandom = true;
 
-        benchTestLoop = 20;
-        outerLoop = 15;
-
-        threadCount = 48;
-        innerLoop = 10;
-        sqlCountPerInnerLoop = 20;
-        reinit = false;
-        // autoCommit = false;
-        // embedded = true;
-        // useVirtualThread = true;
-
         if (useRandom) {
             int size = benchTestLoop * outerLoop * threadCount * sqlCountPerInnerLoop * innerLoop;
             ids = new Integer[size];

@@ -11,12 +11,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,6 +26,7 @@ import com.lealone.db.ConnectionSetting;
 import com.lealone.db.Constants;
 import com.lealone.db.DbSetting;
 import com.lealone.db.SysProperties;
+import com.lealone.db.async.AsyncTask;
 import com.lealone.plugins.bench.BenchTest;
 import com.lealone.plugins.bench.DbType;
 
@@ -47,16 +47,16 @@ public abstract class ClientServerBTest extends BenchTest {
     protected DbType dbType;
     protected boolean disableLealoneQueryCache = true;
 
-    protected int benchTestLoop = 10;
-    protected int outerLoop = 15;
-    protected int innerLoop = 100;
-    protected int sqlCountPerInnerLoop = 500;
+    protected int benchTestLoop;
+    protected int outerLoop;
+    protected int innerLoop;
+    protected int sqlCountPerInnerLoop;
     protected boolean printInnerLoopResult;
     protected boolean async;
     protected boolean autoCommit = true;
     protected boolean batch;
     protected boolean prepare;
-    protected boolean reinit = true;
+    protected boolean reinit;
     protected String[] sqls;
 
     protected AtomicInteger id = new AtomicInteger();
@@ -66,6 +66,22 @@ public abstract class ClientServerBTest extends BenchTest {
 
     protected boolean embedded;
     protected boolean useVirtualThread;
+    protected boolean runTaskInScheduler;
+
+    public ClientServerBTest() {
+        benchTestLoop = 20;
+        outerLoop = 15;
+        threadCount = 16;
+        sqlCountPerInnerLoop = 10;
+        innerLoop = 20;
+
+        reinit = false;
+
+        // prepare = true;
+        // embedded = true;
+        // useVirtualThread = true;
+        runTaskInScheduler = true;
+    }
 
     public void start() {
         String name = getBTestName();
@@ -100,16 +116,17 @@ public abstract class ClientServerBTest extends BenchTest {
     }
 
     public void run() throws Exception {
-        // 以下两种方式都不如直接用Thread跑起来快
-        // 把一个Runnable任务扔给Executors.newFixedThreadPool()跑要比直接用Thread慢很多
-        // executorService = Executors.newFixedThreadPool(threadCount);
-        ThreadFactory factory = Thread.ofVirtual().name("vt-", 1).factory();
-        executorService = Executors.newThreadPerTaskExecutor(factory);
+        if (useVirtualThread) {
+            // 以下两种方式都不如直接用Thread跑起来快
+            // 把一个Runnable任务扔给Executors.newFixedThreadPool()跑要比直接用Thread慢很多
+            // executorService = Executors.newFixedThreadPool(threadCount);
+            ThreadFactory factory = Thread.ofVirtual().name("vt-", 1).factory();
+            executorService = Executors.newThreadPerTaskExecutor(factory);
+        }
 
         Connection[] conns = new Connection[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            Connection conn = getConnection();
-            conns[i] = conn;
+            conns[i] = getConnection();
         }
         for (int i = 0; i < benchTestLoop; i++) {
             if (reinit || i == 0) {
@@ -121,7 +138,10 @@ public abstract class ClientServerBTest extends BenchTest {
         for (int i = 0; i < threadCount; i++) {
             close(conns[i]);
         }
-        executorService.shutdown();
+
+        if (useVirtualThread) {
+            executorService.shutdown();
+        }
     }
 
     protected void runOuterLoop(int threadCount, Connection[] conns) throws Exception {
@@ -141,21 +161,20 @@ public abstract class ClientServerBTest extends BenchTest {
             threads[i] = createBTestThread(i, conns[i]);
         }
         long t1 = System.currentTimeMillis();
-        ArrayList<Future<?>> futures = new ArrayList<>(threadCount);
         for (int i = 0; i < threadCount; i++) {
             threads[i].setCloseConn(false);
             if (useVirtualThread)
-                futures.add(executorService.submit(threads[i]));
+                executorService.submit(threads[i]);
+            else if (async && runTaskInScheduler && dbType == DbType.LEALONE)
+                ((com.lealone.client.jdbc.JdbcConnection) conns[i]).getSession().getScheduler()
+                        .handle(threads[i]);
             else
                 threads[i].start();
         }
 
         long totalTime = 0;
         for (int i = 0; i < threadCount; i++) {
-            if (useVirtualThread)
-                futures.get(i).get();
-            else
-                threads[i].join();
+            threads[i].await();
             totalTime += threads[i].getTotalTime();
 
             // System.out.println(threads[i].getName() + " start time: " //
@@ -180,9 +199,10 @@ public abstract class ClientServerBTest extends BenchTest {
         throw new RuntimeException("not supports");
     }
 
-    protected abstract class ClientServerBTestThread extends Thread {
+    protected abstract class ClientServerBTestThread extends Thread implements AsyncTask {
 
         protected final Random random = new Random();
+        protected final CountDownLatch latch = new CountDownLatch(1);
 
         protected Connection conn;
         protected Statement stmt;
@@ -190,12 +210,9 @@ public abstract class ClientServerBTest extends BenchTest {
         protected boolean closeConn = true;
         protected long startTime;
         protected long endTime;
-        protected long t1;
-        protected long t2;
 
         public ClientServerBTestThread(int id, Connection conn) {
             super(getBTestName() + "Thread-" + id);
-            t1 = System.currentTimeMillis();
             this.conn = conn;
             try {
                 this.stmt = conn.createStatement();
@@ -238,15 +255,48 @@ public abstract class ClientServerBTest extends BenchTest {
 
         @Override
         public void run() {
+            startTime = System.nanoTime();
             try {
+                if (!autoCommit)
+                    conn.setAutoCommit(false);
                 execute();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
-                t2 = System.currentTimeMillis();
-                close(stmt, ps);
-                if (closeConn)
-                    close(conn);
+                if (!async) {
+                    onComplete();
+                }
+            }
+        }
+
+        protected void onComplete() {
+            if (!autoCommit) {
+                try {
+                    conn.commit();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            endTime = System.nanoTime();
+            latch.countDown();
+            close(stmt, ps);
+            if (closeConn)
+                close(conn);
+        }
+
+        public void await() {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        protected void printInnerLoopResult(long t1) {
+            if (printInnerLoopResult) {
+                long t2 = System.nanoTime();
+                System.out.println(getBTestName() + " sql count: " + (innerLoop * sqlCountPerInnerLoop) //
+                        + " total time: " + toMillis(t2 - t1) + " ms");
             }
         }
     }
@@ -261,7 +311,7 @@ public abstract class ClientServerBTest extends BenchTest {
             return getPgConnection();
         case LEALONE: {
             Connection conn = embedded ? getEmbeddedLealoneConnection()
-                    : getLealoneConnection(useVirtualThread || async);
+                    : getLealoneConnection(useVirtualThread || async, runTaskInScheduler, threadCount);
             if (disableLealoneQueryCache) {
                 disableLealoneQueryCache(conn);
             }
@@ -385,11 +435,18 @@ public abstract class ClientServerBTest extends BenchTest {
         return DriverManager.getConnection(url, "root", "");
     }
 
-    public static Connection getLealoneConnection(boolean async) throws Exception {
+    public static Connection getLealoneConnection(boolean async, boolean runTaskInScheduler,
+            int threadCount) throws Exception {
         // async = true;
+        // threadCount = 8;
         String url = getLealoneUrl();
         url += "&" + ConnectionSetting.IS_SHARED + "=true";
-        url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=8";
+        if (async && runTaskInScheduler) {
+            url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=" + threadCount;
+        } else {
+            url += "&" + ConnectionSetting.SCHEDULER_COUNT + "="
+                    + Runtime.getRuntime().availableProcessors();
+        }
         url += "&" + ConnectionSetting.MAX_PACKET_COUNT_PER_LOOP + "=50";
         url += "&" + ConnectionSetting.NET_FACTORY_NAME + "=" + (async ? "nio" : "bio");
         return getConnection(url, "root", "");

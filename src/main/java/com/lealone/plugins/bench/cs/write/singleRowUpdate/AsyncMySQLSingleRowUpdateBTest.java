@@ -30,6 +30,7 @@ public class AsyncMySQLSingleRowUpdateBTest {
     public static void main(String[] args) throws InterruptedException {
         VertxOptions vertxOptions = new VertxOptions();
         vertxOptions.setEventLoopPoolSize(threadCount);
+        // vertxOptions.setBlockedThreadCheckInterval(60 * 60 * 1000);
         Vertx vertx = Vertx.vertx(vertxOptions);
         SqlClient[] clients = new SqlClient[threadCount];
         clients[0] = getSqlClient(vertx);

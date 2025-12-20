@@ -7,13 +7,10 @@ package com.lealone.plugins.bench.cs.query;
 
 import java.sql.Connection;
 import java.sql.Statement;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.lealone.client.jdbc.JdbcPreparedStatement;
 import com.lealone.client.jdbc.JdbcStatement;
-
 import com.lealone.plugins.bench.cs.ClientServerBTest;
 
 public abstract class ClientServerQueryBTest extends ClientServerBTest {
@@ -30,7 +27,6 @@ public abstract class ClientServerQueryBTest extends ClientServerBTest {
 
         @Override
         protected void execute() throws Exception {
-            startTime = System.nanoTime();
             if (async) {
                 if (prepare)
                     executePreparedQueryAsync();
@@ -41,47 +37,40 @@ public abstract class ClientServerQueryBTest extends ClientServerBTest {
                     executePreparedQuery();
                 else
                     executeQuery(stmt);
-                endTime = System.nanoTime();
             }
         }
 
         protected void executeQueryAsync(Statement statement) throws Exception {
             JdbcStatement stmt = (JdbcStatement) statement;
             AtomicInteger counter = new AtomicInteger(sqlCountPerInnerLoop * innerLoop);
-            CountDownLatch latch = new CountDownLatch(1);
             long t1 = System.nanoTime();
             for (int j = 0; j < innerLoop; j++) {
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     stmt.executeQueryAsync(nextSql()).onComplete(ar -> {
                         if (counter.decrementAndGet() == 0) {
-                            endTime = System.nanoTime();
-                            latch.countDown();
+                            printInnerLoopResult(t1);
+                            onComplete();
                         }
                     });
                 }
             }
-            latch.await();
-            printInnerLoopResult(t1);
         }
 
         protected void executePreparedQueryAsync() throws Exception {
-            JdbcPreparedStatement ps2 = (JdbcPreparedStatement) ps;
+            JdbcPreparedStatement ps = (JdbcPreparedStatement) this.ps;
             AtomicInteger counter = new AtomicInteger(sqlCountPerInnerLoop * innerLoop);
-            CountDownLatch latch = new CountDownLatch(1);
             long t1 = System.nanoTime();
             for (int j = 0; j < innerLoop; j++) {
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     prepare();
-                    ps2.executeQueryAsync().onComplete(ar -> {
+                    ps.executeQueryAsync().onComplete(ar -> {
                         if (counter.decrementAndGet() == 0) {
-                            endTime = System.nanoTime();
-                            latch.countDown();
+                            printInnerLoopResult(t1);
+                            onComplete();
                         }
                     });
                 }
             }
-            latch.await();
-            printInnerLoopResult(t1);
         }
 
         protected void executeQuery(Statement statement) throws Exception {
@@ -102,14 +91,6 @@ public abstract class ClientServerQueryBTest extends ClientServerBTest {
                 }
             }
             printInnerLoopResult(t1);
-        }
-
-        private void printInnerLoopResult(long t1) {
-            if (printInnerLoopResult) {
-                long t2 = System.nanoTime();
-                System.out.println(getBTestName() + ": "
-                        + TimeUnit.NANOSECONDS.toMillis(t2 - t1) / sqlCountPerInnerLoop + " ms");
-            }
         }
     }
 }

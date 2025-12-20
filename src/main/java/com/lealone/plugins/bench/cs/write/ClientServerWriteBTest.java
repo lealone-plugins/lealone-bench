@@ -7,7 +7,6 @@ package com.lealone.plugins.bench.cs.write;
 
 import java.sql.Connection;
 import java.sql.Statement;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.lealone.client.jdbc.JdbcPreparedStatement;
@@ -24,13 +23,11 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
 
         @Override
         protected void execute() throws Exception {
-            startTime = System.nanoTime();
             if (batch) {
                 if (prepare)
                     executePreparedBatchUpdate();
                 else
                     executeBatchUpdate();
-                endTime = System.nanoTime();
             } else {
                 if (async) {
                     if (prepare)
@@ -42,96 +39,60 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
                         executePreparedUpdate();
                     else
                         executeUpdate(stmt);
-                    endTime = System.nanoTime();
                 }
             }
         }
 
         protected void executeUpdateAsync(Statement statement) throws Exception {
             long t1 = System.nanoTime();
-            if (!autoCommit)
-                conn.setAutoCommit(false);
             JdbcStatement stmt = (JdbcStatement) statement;
             AtomicInteger counter = new AtomicInteger(sqlCountPerInnerLoop * innerLoop);
-            CountDownLatch latch = new CountDownLatch(1);
             for (int j = 0; j < innerLoop; j++) {
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     stmt.executeUpdateAsync(nextSql()).onComplete(ar -> {
                         if (counter.decrementAndGet() == 0) {
-                            endTime = System.nanoTime();
-                            latch.countDown();
+                            printInnerLoopResult(t1);
+                            onComplete();
                         }
                     });
                 }
             }
-            if (!autoCommit)
-                conn.commit();
-            latch.await();
-            endTime = System.nanoTime();
-            printInnerLoopResult(t1);
+        }
+
+        protected void executePreparedUpdateAsync() throws Exception {
+            long t1 = System.nanoTime();
+            JdbcPreparedStatement ps = (JdbcPreparedStatement) this.ps;
+            AtomicInteger counter = new AtomicInteger(sqlCountPerInnerLoop * innerLoop);
+            for (int j = 0; j < innerLoop; j++) {
+                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+                    prepare();
+                    ps.executeUpdateAsync().onComplete(ar -> {
+                        if (counter.decrementAndGet() == 0) {
+                            printInnerLoopResult(t1);
+                            onComplete();
+                        }
+                    });
+                }
+            }
         }
 
         protected void executeUpdate(Statement statement) throws Exception {
             long t1 = System.nanoTime();
             for (int j = 0; j < innerLoop; j++) {
-                if (!autoCommit)
-                    conn.setAutoCommit(false);
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     statement.executeUpdate(nextSql());
                 }
-                if (!autoCommit)
-                    conn.commit();
             }
-            printInnerLoopResult(t1);
-        }
-
-        protected void executePreparedUpdateAsync() throws Exception {
-            long t1 = System.nanoTime();
-            if (!autoCommit)
-                conn.setAutoCommit(false);
-            JdbcPreparedStatement ps2 = (JdbcPreparedStatement) ps;
-            AtomicInteger counter = new AtomicInteger(sqlCountPerInnerLoop * innerLoop);
-            CountDownLatch latch = new CountDownLatch(1);
-            for (int j = 0; j < innerLoop; j++) {
-                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
-                    prepare();
-                    ps2.executeUpdateAsync().onComplete(ar -> {
-                        if (counter.decrementAndGet() == 0) {
-                            endTime = System.nanoTime();
-                            latch.countDown();
-                        }
-                    });
-                }
-            }
-            latch.await();
-            if (!autoCommit)
-                conn.commit();
             printInnerLoopResult(t1);
         }
 
         protected void executePreparedUpdate() throws Exception {
             long t1 = System.nanoTime();
-            if (!autoCommit)
-                conn.setAutoCommit(false);
             for (int j = 0; j < innerLoop; j++) {
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     prepare();
                     ps.executeUpdate();
                 }
-            }
-            if (!autoCommit)
-                conn.commit();
-            printInnerLoopResult(t1);
-        }
-
-        protected void executePreparedBatchUpdate() throws Exception {
-            long t1 = System.nanoTime();
-            for (int j = 0; j < innerLoop; j++) {
-                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
-                    prepare();
-                    ps.addBatch();
-                }
-                ps.executeBatch();
             }
             printInnerLoopResult(t1);
         }
@@ -147,12 +108,16 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
             printInnerLoopResult(t1);
         }
 
-        protected void printInnerLoopResult(long t1) {
-            if (printInnerLoopResult) {
-                long t2 = System.nanoTime();
-                System.out.println(getBTestName() + " sql count: " + (innerLoop * sqlCountPerInnerLoop) //
-                        + " total time: " + toMillis(t2 - t1) + " ms");
+        protected void executePreparedBatchUpdate() throws Exception {
+            long t1 = System.nanoTime();
+            for (int j = 0; j < innerLoop; j++) {
+                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+                    prepare();
+                    ps.addBatch();
+                }
+                ps.executeBatch();
             }
+            printInnerLoopResult(t1);
         }
     }
 }

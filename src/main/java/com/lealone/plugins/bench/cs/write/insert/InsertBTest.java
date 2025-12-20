@@ -13,13 +13,6 @@ import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 public abstract class InsertBTest extends ClientServerWriteBTest {
 
     protected InsertBTest() {
-        benchTestLoop = 10;
-        outerLoop = 15;
-        threadCount = 8;
-        sqlCountPerInnerLoop = 10;
-        innerLoop = 20;
-        // batch = true;
-        // printInnerLoopResult = true;
     }
 
     @Override
