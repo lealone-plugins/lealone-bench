@@ -3,11 +3,11 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.batch;
+package com.lealone.plugins.bench.cs.write.index.update;
 
-public class LealoneBatchBTest extends BatchBTest {
+public class MySQLIndexUpdateBTest extends IndexUpdateBTest {
 
     public static void main(String[] args) {
-        new LealoneBatchBTest().start();
+        new MySQLIndexUpdateBTest().start();
     }
 }

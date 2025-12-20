@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.jdbc;
+package com.lealone.plugins.bench.cs.conn;
 
 import java.sql.Connection;
 
@@ -16,7 +16,7 @@ public abstract class ConnectionBTest extends ClientServerBTest {
 
     @Override
     public void run() throws Exception {
-        outerLoop = 5;
+        outerLoop = 500;
         for (int i = 0; i < outerLoop; i++) {
             createConnection(i);
         }
@@ -32,7 +32,7 @@ public abstract class ConnectionBTest extends ClientServerBTest {
         long t2 = System.currentTimeMillis();
 
         printResult(loop, ", create connection count: " + connectionCount + ", total time: " + (t2 - t1)
-                + " ms" + ", avg time: " + (t2 - t1) / (connectionCount * 1.0) + " ms");
+                + " ms" + ", avg time: " + (t2 - t1) / connectionCount + " ms");
 
         for (int i = 0; i < connectionCount; i++) {
             connections[i].close();

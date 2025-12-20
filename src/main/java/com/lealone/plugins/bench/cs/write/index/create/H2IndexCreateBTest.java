@@ -3,11 +3,11 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.index.update;
+package com.lealone.plugins.bench.cs.write.index.create;
 
-public class H2IndexUpdateBTest extends IndexUpdateBTest {
+public class H2IndexCreateBTest extends IndexCreateBTest {
 
     public static void main(String[] args) {
-        new H2IndexUpdateBTest().start();
+        new H2IndexCreateBTest().start();
     }
 }

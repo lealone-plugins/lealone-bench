@@ -3,12 +3,12 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.index.create;
+package com.lealone.plugins.bench.cs.write.index.create;
 
 import java.sql.Connection;
 import java.sql.Statement;
 
-import com.lealone.plugins.bench.cs.batch.BatchBTest;
+import com.lealone.plugins.bench.cs.write.singleThreadBatch.BatchBTest;
 
 public class IndexCreateBTest extends BatchBTest {
 

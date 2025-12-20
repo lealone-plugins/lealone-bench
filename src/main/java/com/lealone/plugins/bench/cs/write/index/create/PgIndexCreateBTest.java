@@ -3,11 +3,11 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.jdbc;
+package com.lealone.plugins.bench.cs.write.index.create;
 
-public class MySQLConnectionBTest extends ConnectionBTest {
+public class PgIndexCreateBTest extends IndexCreateBTest {
 
     public static void main(String[] args) {
-        new MySQLConnectionBTest().start();
+        new PgIndexCreateBTest().start();
     }
 }

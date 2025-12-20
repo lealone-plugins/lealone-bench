@@ -3,7 +3,7 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.batch;
+package com.lealone.plugins.bench.cs.write.singleThreadBatch;
 
 public class H2BatchBTest extends BatchBTest {
 

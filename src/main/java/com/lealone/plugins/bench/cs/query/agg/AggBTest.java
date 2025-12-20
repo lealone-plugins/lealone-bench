@@ -14,12 +14,9 @@ import com.lealone.plugins.bench.cs.query.ClientServerQueryBTest;
 public abstract class AggBTest extends ClientServerQueryBTest {
 
     public AggBTest() {
+        benchTestLoop = 5;
         threadCount = 1;
-        outerLoop = 15;
-        innerLoop = 5;
-        sqlCountPerInnerLoop = 50;
         rowCount = 10000;
-        // printInnerLoopResult = true;
     }
 
     @Override

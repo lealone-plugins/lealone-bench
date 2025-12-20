@@ -3,11 +3,11 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.index.update;
+package com.lealone.plugins.bench.cs.conn;
 
-public class PgIndexUpdateBTestt extends IndexUpdateBTest {
+public class H2ConnectionBTest extends ConnectionBTest {
 
     public static void main(String[] args) {
-        new PgIndexUpdateBTestt().start();
+        new H2ConnectionBTest().start();
     }
 }

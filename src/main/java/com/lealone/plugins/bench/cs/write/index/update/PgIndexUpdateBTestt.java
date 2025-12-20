@@ -3,11 +3,11 @@
  * Licensed under the Server Side Public License, v 1.
  * Initial Developer: zhh
  */
-package com.lealone.plugins.bench.cs.batch;
+package com.lealone.plugins.bench.cs.write.index.update;
 
-public class PgBatchBTest extends BatchBTest {
+public class PgIndexUpdateBTestt extends IndexUpdateBTest {
 
     public static void main(String[] args) {
-        new PgBatchBTest().start();
+        new PgIndexUpdateBTestt().start();
     }
 }

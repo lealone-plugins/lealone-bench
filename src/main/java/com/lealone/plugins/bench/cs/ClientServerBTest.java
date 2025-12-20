@@ -456,6 +456,7 @@ public abstract class ClientServerBTest extends BenchTest {
         String url = getLealoneUrl();
         url += "&" + ConnectionSetting.IS_SHARED + "=true";
         url += "&" + ConnectionSetting.MAX_SHARED_SIZE + "=" + maxSharedSize;
+        url += "&" + ConnectionSetting.NET_FACTORY_NAME + "=" + "nio";
         return getConnection(url, "root", "");
     }
 
