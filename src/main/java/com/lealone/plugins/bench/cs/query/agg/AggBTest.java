@@ -14,8 +14,8 @@ import com.lealone.plugins.bench.cs.query.ClientServerQueryBTest;
 public abstract class AggBTest extends ClientServerQueryBTest {
 
     public AggBTest() {
-        benchTestLoop = 5;
-        threadCount = 1;
+        // benchTestLoop = 5;
+        // threadCount = 1;
         rowCount = 10000;
     }
 

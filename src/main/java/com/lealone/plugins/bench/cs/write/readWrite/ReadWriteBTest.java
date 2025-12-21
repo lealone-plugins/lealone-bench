@@ -60,40 +60,31 @@ public abstract class ReadWriteBTest extends ClientServerWriteBTest {
         @Override
         protected void executeUpdateAsync(Statement statement) throws Exception {
             long t1 = System.nanoTime();
-            if (!autoCommit)
-                conn.setAutoCommit(false);
             JdbcStatement stmt = (JdbcStatement) statement;
             AtomicInteger counter = new AtomicInteger(sqlCountPerInnerLoop * innerLoop * 2);
-            // CountDownLatch latch = new CountDownLatch(1);
             for (int j = 0; j < innerLoop; j++) {
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     String sql = "select * from ReadWriteBTest_R where pk=" + random.nextInt(rowCount);
                     stmt.executeQueryAsync(sql).onComplete(ar -> {
                         if (counter.decrementAndGet() == 0) {
-                            endTime = System.nanoTime();
-                            latch.countDown();
+                            printInnerLoopResult(t1);
+                            onComplete();
                         }
                     });
                     sql = "insert into ReadWriteBTest_W values(" + id.incrementAndGet() + ",1)";
                     stmt.executeUpdateAsync(sql).onComplete(ar -> {
                         if (counter.decrementAndGet() == 0) {
-                            endTime = System.nanoTime();
-                            latch.countDown();
+                            printInnerLoopResult(t1);
+                            onComplete();
                         }
                     });
                 }
             }
-            // latch.await();
-            if (!autoCommit)
-                conn.commit();
-            printInnerLoopResult(t1);
         }
 
         @Override
         protected void executeUpdate(Statement statement) throws Exception {
             long t1 = System.nanoTime();
-            if (!autoCommit)
-                conn.setAutoCommit(false);
             for (int j = 0; j < innerLoop; j++) {
                 for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     String sql = "select * from ReadWriteBTest_R where pk=" + random.nextInt(rowCount);
@@ -102,8 +93,6 @@ public abstract class ReadWriteBTest extends ClientServerWriteBTest {
                     statement.executeUpdate(sql);
                 }
             }
-            if (!autoCommit)
-                conn.commit();
             printInnerLoopResult(t1);
         }
 

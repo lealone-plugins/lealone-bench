@@ -69,7 +69,7 @@ public abstract class ClientServerBTest extends BenchTest {
     protected boolean runTaskInScheduler;
 
     public ClientServerBTest() {
-        benchTestLoop = 20;
+        benchTestLoop = 10;
         outerLoop = 15;
         threadCount = 16;
         sqlCountPerInnerLoop = 10;

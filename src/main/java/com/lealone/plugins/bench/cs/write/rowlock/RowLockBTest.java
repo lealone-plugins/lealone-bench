@@ -8,15 +8,13 @@ package com.lealone.plugins.bench.cs.write.rowlock;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
-import java.util.Random;
 
 import com.lealone.plugins.bench.cs.write.ClientServerWriteBTest;
 
 public abstract class RowLockBTest extends ClientServerWriteBTest {
 
     protected RowLockBTest() {
-        rowCount = threadCount;
-        sqlCountPerInnerLoop = 50;
+        rowCount = 1000;
         sqls = new String[rowCount];
     }
 
@@ -51,8 +49,6 @@ public abstract class RowLockBTest extends ClientServerWriteBTest {
     }
 
     private class UpdateThread extends UpdateThreadBase {
-
-        private final Random random = new Random();
 
         UpdateThread(int id, Connection conn) {
             super(id, conn);

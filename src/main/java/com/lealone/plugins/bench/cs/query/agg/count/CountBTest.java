@@ -10,6 +10,6 @@ import com.lealone.plugins.bench.cs.query.agg.AggBTest;
 public abstract class CountBTest extends AggBTest {
     @Override
     protected String nextAggSql() {
-        return "select count(pk) from AggBTest where pk<9999";
+        return "select count(pk) from AggBTest where pk<10";
     }
 }
