@@ -5,23 +5,16 @@
  */
 package com.lealone.plugins.bench.embed.storage;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.lealone.db.scheduler.EmbeddedScheduler;
-import com.lealone.db.scheduler.InternalScheduler;
-import com.lealone.db.scheduler.Scheduler;
 import com.lealone.db.scheduler.SchedulerFactory;
 import com.lealone.storage.aose.btree.BTreeMap;
-import com.lealone.storage.aose.btree.page.PageOperations.Put;
-import com.lealone.storage.page.PageOperation;
 
 // -Xms512M -Xmx512M -XX:+PrintGCDetails -XX:+PrintGCTimeStamps
 public class BTreeAsyncBTest extends StorageMapBTest {
 
     public static void main(String[] args) throws Exception {
-        // 禁用com.mysql.cj.jdbc.AbandonedConnectionCleanupThread
-        System.setProperty("com.mysql.cj.disableAbandonedConnectionCleanup", "true");
-
         new BTreeAsyncBTest().run();
     }
 
@@ -29,49 +22,48 @@ public class BTreeAsyncBTest extends StorageMapBTest {
     private BTreeMap<Integer, String> btreeMap;
 
     @Override
-    protected void testWrite(int loop) {
-        multiThreadsRandomWriteAsync(loop);
-        multiThreadsSerialWriteAsync(loop);
-    }
-
-    @Override
-    protected void testRead(int loop) {
-        multiThreadsRandomRead(loop);
-        multiThreadsSerialRead(loop);
-    }
-
-    @Override
-    protected void testConflict(int loop) {
-        testConflict(loop, true);
-    }
-
-    @Override
-    protected void beforeRun() {
-        createPageOperationHandlers();
-        super.beforeRun();
-    }
-
-    @Override
     protected void init() {
         if (!inited.compareAndSet(false, true))
             return;
         initConfig();
-        createPageOperationHandlers();
         openStorage();
         map = btreeMap = storage.openBTreeMap(BTreeAsyncBTest.class.getSimpleName(), getIntType(),
                 getStringType(), null);
     }
 
-    private void createPageOperationHandlers() {
-        Scheduler[] scheduler = new Scheduler[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            scheduler[i] = new EmbeddedScheduler(i, threadCount, config);
+    @Override
+    void singleThreadWrite(boolean random) {
+        long t1 = System.currentTimeMillis();
+        write(random, 0, rowCount);
+        long t2 = System.currentTimeMillis();
+        printResult("single-thread " + (random ? "random" : "serial") + " write time: " + (t2 - t1)
+                + " ms, count: " + rowCount);
+    }
+
+    @Override
+    void write(boolean random, int start, int end) {
+        int rowCount = end - start;
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicInteger counter = new AtomicInteger(rowCount);
+        for (int i = start; i < end; i++) {
+            int key = random ? randomKeys[i] : i;
+            btreeMap.put(key, "valueaaa", ar -> {
+                notifyOperationComplete();
+                if (counter.decrementAndGet() == 0) {
+                    latch.countDown();
+                }
+            });
         }
-        if (schedulerFactory != null) {
-            schedulerFactory.stop();
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        schedulerFactory = SchedulerFactory.create(config, scheduler);
-        schedulerFactory.start();
+    }
+
+    @Override
+    protected void testConflict(int loop) {
+        testConflict(loop, true);
     }
 
     @Override
@@ -91,56 +83,32 @@ public class BTreeAsyncBTest extends StorageMapBTest {
     @Override
     protected BenchTestTask createBenchTestTask(int start, int end) throws Exception {
         lockCount.set(0);
+        BenchTestTask task;
         if (testConflictOnly)
-            return new AsyncBTreeConflictBenchTestTask();
+            task = new AsyncBTreeConflictBenchTestTask();
         else
-            return new AsyncBTreeBenchTestTask(start, end);
+            task = new AsyncBTreeBenchTestTask(start, end);
+        if (runTaskInScheduler) {
+            SchedulerFactory sf = SchedulerFactory.getDefaultSchedulerFactory();
+            sf.getScheduler().handle(task);
+        }
+        return task;
     }
 
-    private class AsyncBTreeBenchTestTask extends StorageMapBenchTestTask implements PageOperation {
-
-        InternalScheduler currentScheduler;
+    private class AsyncBTreeBenchTestTask extends StorageMapBenchTestTask {
 
         AsyncBTreeBenchTestTask(int start, int end) throws Exception {
             super(start, end);
-            currentScheduler = (InternalScheduler) schedulerFactory.getScheduler();
-            currentScheduler.handlePageOperation(this);
-        }
-
-        @Override
-        public PageOperationResult run(InternalScheduler currentScheduler) {
-            this.currentScheduler = currentScheduler;
-            super.run();
-            return PageOperationResult.SUCCEEDED;
-        }
-
-        @Override
-        public boolean needCreateThread() {
-            return false;
         }
 
         @Override
         protected void write() throws Exception {
-            for (int i = start; i < end; i++) {
-                int key;
-                if (isRandom())
-                    key = randomKeys[i];
-                else
-                    key = i;
-                String value = "value-";// "value-" + key;
+            BTreeAsyncBTest.this.write(isRandom(), start, end);
+        }
 
-                PageOperation po = new Put<>(btreeMap, key, value, ar -> {
-                    notifyOperationComplete();
-                });
-
-                PageOperationResult result = po.run(currentScheduler);
-                if (result == PageOperationResult.LOCKED) {
-                    lockCount.incrementAndGet();
-                    currentScheduler.handlePageOperation(po);
-                } else if (result == PageOperationResult.RETRY) {
-                    currentScheduler.handlePageOperation(po);
-                }
-            }
+        @Override
+        public boolean needCreateThread() {
+            return !runTaskInScheduler;
         }
     }
 
@@ -155,17 +123,9 @@ public class BTreeAsyncBTest extends StorageMapBTest {
             for (int i = 0; i < conflictKeyCount; i++) {
                 int key = conflictKeys[i];
                 String value = "value-conflict";
-
-                PageOperation po = new Put<>(btreeMap, key, value, ar -> {
+                btreeMap.put(key, value, ar -> {
                     notifyOperationComplete();
                 });
-                PageOperationResult result = po.run(currentScheduler);
-                if (result == PageOperationResult.LOCKED) {
-                    lockCount.incrementAndGet();
-                    currentScheduler.handlePageOperation(po);
-                } else if (result == PageOperationResult.RETRY) {
-                    currentScheduler.handlePageOperation(po);
-                }
             }
         }
     }

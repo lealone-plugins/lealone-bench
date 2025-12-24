@@ -76,8 +76,9 @@ public abstract class ClientServerQueryBTest extends ClientServerBTest {
         protected void executeQuery(Statement statement) throws Exception {
             long t1 = System.nanoTime();
             for (int j = 0; j < innerLoop; j++) {
-                for (int i = 0; i < sqlCountPerInnerLoop; i++)
+                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
                     statement.executeQuery(nextSql());
+                }
             }
             printInnerLoopResult(t1);
         }

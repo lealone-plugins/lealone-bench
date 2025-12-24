@@ -35,13 +35,6 @@ public abstract class ClientServerBTest extends BenchTest {
     static {
         System.setProperty("lealone.server.cached.objects", "10000000");
         System.setProperty("h2.serverCachedObjects", "10000000");
-        disableAbandonedConnectionCleanup();
-    }
-
-    public static void disableAbandonedConnectionCleanup() {
-        // 不启动mysql-cj-abandoned-connection-cleanup线程
-        System.setProperty(com.mysql.cj.conf.PropertyDefinitions.SYSP_disableAbandonedConnectionCleanup,
-                "true");
     }
 
     protected DbType dbType;
@@ -69,16 +62,17 @@ public abstract class ClientServerBTest extends BenchTest {
     protected boolean runTaskInScheduler;
 
     public ClientServerBTest() {
-        benchTestLoop = 10;
+        benchTestLoop = 20;
         outerLoop = 15;
+        innerLoop = 10;
+        sqlCountPerInnerLoop = 20;
+
         threadCount = 16;
-        sqlCountPerInnerLoop = 10;
-        innerLoop = 20;
 
         reinit = false;
 
         // prepare = true;
-        // embedded = true;
+        embedded = true;
         // useVirtualThread = true;
         runTaskInScheduler = true;
     }
@@ -165,7 +159,7 @@ public abstract class ClientServerBTest extends BenchTest {
             threads[i].setCloseConn(false);
             if (useVirtualThread)
                 executorService.submit(threads[i]);
-            else if (async && runTaskInScheduler && dbType == DbType.LEALONE)
+            else if ((async || embedded) && runTaskInScheduler && dbType == DbType.LEALONE)
                 ((com.lealone.client.jdbc.JdbcConnection) conns[i]).getSession().getScheduler()
                         .handle(threads[i]);
             else
@@ -310,7 +304,7 @@ public abstract class ClientServerBTest extends BenchTest {
         case POSTGRESQL:
             return getPgConnection();
         case LEALONE: {
-            Connection conn = embedded ? getEmbeddedLealoneConnection()
+            Connection conn = embedded ? getEmbeddedLealoneConnection(threadCount)
                     : getLealoneConnection(useVirtualThread || async, runTaskInScheduler, threadCount);
             if (disableLealoneQueryCache) {
                 disableLealoneQueryCache(conn);
@@ -445,10 +439,11 @@ public abstract class ClientServerBTest extends BenchTest {
         return url;
     }
 
-    public static Connection getEmbeddedLealoneConnection() throws Exception {
+    public static Connection getEmbeddedLealoneConnection(int threadCount) throws Exception {
         SysProperties.setBaseDir(joinDirs("lealone"));
         String url = "jdbc:lealone:embed:EmbeddedBenchTestDB?" + DbSetting.PERSISTENT
-                + "=true&ANALYZE_AUTO=0";
+        // + "=true&ANALYZE_AUTO=0";
+                + "=true&ANALYZE_AUTO=0&SCHEDULER_COUNT=" + threadCount;
         return DriverManager.getConnection(url, "root", "");
     }
 

@@ -16,6 +16,16 @@ import java.lang.management.MemoryUsage;
 //-XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Xmx800M
 public abstract class BenchTest {
 
+    static {
+        disableAbandonedConnectionCleanup();
+    }
+
+    public static void disableAbandonedConnectionCleanup() {
+        // 不启动mysql-cj-abandoned-connection-cleanup线程
+        System.setProperty(com.mysql.cj.conf.PropertyDefinitions.SYSP_disableAbandonedConnectionCleanup,
+                "true");
+    }
+
     public static String joinDirs(String... dirs) {
         StringBuilder s = new StringBuilder(BENCH_TEST_BASE_DIR);
         for (String dir : dirs)

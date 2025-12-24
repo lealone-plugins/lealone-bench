@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedTransferQueue;
 
-import com.lealone.db.scheduler.SchedulerFactory;
 import com.lealone.plugins.bench.embed.EmbeddedBTest;
 import com.lealone.storage.StorageMap;
 import com.lealone.storage.aose.AOStorage;
@@ -33,10 +32,9 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     int[] conflictKeys = getConflictKeys();
     boolean testConflictOnly;
 
-    SchedulerFactory schedulerFactory;
-
     protected StorageMapBTest() {
         this(200 * 10000);
+        runTaskInScheduler = true;
     }
 
     protected StorageMapBTest(int rowCount) {
@@ -44,15 +42,15 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     }
 
     protected void testWrite(int loop) {
-        singleThreadRandomWrite();
+        // singleThreadRandomWrite();
         singleThreadSerialWrite();
         // multiThreadsRandomWrite(loop);
         // multiThreadsSerialWrite(loop);
     }
 
     protected void testRead(int loop) {
-        singleThreadRandomRead();
-        singleThreadSerialRead();
+        // singleThreadRandomRead();
+        // singleThreadSerialRead();
         // multiThreadsRandomRead(loop);
         // multiThreadsSerialRead(loop);
     }
@@ -147,22 +145,21 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         String factoryType = "RoundRobin";
         // factoryType = "Random";
         // factoryType = "LoadBalance";
-        config.put("page_operation_handler_factory_type", factoryType);
-        config.put("page_operation_handler_count", threadCount + "");
+        config.put("scheduler_factory_type", factoryType);
+        config.put("scheduler_count", threadCount + "");
     }
 
     protected void openStorage() {
         AOStorageBuilder builder = new AOStorageBuilder(config);
-        // builder.schedulerFactory(schedulerFactory);
         storagePath = joinDirs("lealone", "aose");
         int pageSize = 16 * 1024;
         pageSize = 2 * 1024;
         pageSize = 4 * 1024; // 最优
-        // pageSize = 6 * 1024;
-        // pageSize = 8 * 1024;
+        pageSize = 8 * 1024;
+        // pageSize = 16 * 1024;
+        // pageSize = 32 * 1024;
         // pageSize = 1 * 1024;
         // pageSize = 1024 / 2 / 2;
-        // pageSize = 32 * 1024;
         // pageSize = 512 * 1024;
         builder.storagePath(storagePath).compress().pageSize(pageSize).minFillRate(30);
         storage = builder.openStorage();
@@ -291,39 +288,51 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
     }
 
     void singleThreadSerialWrite() {
-        long t1 = System.currentTimeMillis();
-        for (int i = 0; i < rowCount; i++) {
-            put(i, "valueaaa");
-        }
-        long t2 = System.currentTimeMillis();
-        printResult("single-thread serial write time: " + (t2 - t1) + " ms, count: " + rowCount);
+        singleThreadWrite(false);
     }
 
     void singleThreadRandomWrite() {
+        singleThreadWrite(true);
+    }
+
+    void singleThreadWrite(boolean random) {
         long t1 = System.currentTimeMillis();
-        for (int i = 0; i < rowCount; i++) {
-            put(randomKeys[i], "valueaaa");
-        }
+        write(random, 0, rowCount);
         long t2 = System.currentTimeMillis();
-        printResult("single-thread random write time: " + (t2 - t1) + " ms, count: " + rowCount);
+        printResult("single-thread " + (random ? "random" : "serial") + " write time: " + (t2 - t1)
+                + " ms, count: " + rowCount);
+    }
+
+    void write(boolean random, int start, int end) {
+        for (int i = start; i < end; i++) {
+            int key = random ? randomKeys[i] : i;
+            put(key, "valueaaa");
+            notifyOperationComplete();
+        }
     }
 
     void singleThreadSerialRead() {
-        long t1 = System.currentTimeMillis();
-        for (int i = 0; i < rowCount; i++) {
-            get(i);
-        }
-        long t2 = System.currentTimeMillis();
-        printResult("single-thread serial read time: " + (t2 - t1) + " ms, count: " + rowCount);
+        singleThreadRead(false);
     }
 
     void singleThreadRandomRead() {
+        singleThreadRead(true);
+    }
+
+    void singleThreadRead(boolean random) {
         long t1 = System.currentTimeMillis();
-        for (int i = 0; i < rowCount; i++) {
-            get(randomKeys[i]);
-        }
+        write(random, 0, rowCount);
         long t2 = System.currentTimeMillis();
-        printResult("single-thread random read time: " + (t2 - t1) + " ms, count: " + rowCount);
+        printResult("single-thread " + (random ? "random" : "serial") + " read time: " + (t2 - t1)
+                + " ms, count: " + rowCount);
+    }
+
+    void read(boolean random, int start, int end) {
+        for (int i = start; i < end; i++) {
+            int key = random ? randomKeys[i] : i;
+            get(key);
+            notifyOperationComplete();
+        }
     }
 
     @Override
@@ -350,29 +359,11 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         }
 
         protected void read() throws Exception {
-            for (int i = start; i < end; i++) {
-                int key;
-                if (isRandom())
-                    key = randomKeys[i];
-                else
-                    key = i;
-                get(key);
-                notifyOperationComplete();
-            }
+            StorageMapBTest.this.read(isRandom(), start, end);
         }
 
         protected void write() throws Exception {
-            for (int i = start; i < end; i++) {
-                int key;
-                if (isRandom())
-                    key = randomKeys[i];
-                else
-                    key = i;
-                String value = "value-";// "value-" + key;
-
-                put(key, value);
-                notifyOperationComplete();
-            }
+            StorageMapBTest.this.write(isRandom(), start, end);
         }
     }
 

@@ -12,6 +12,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.lealone.db.async.AsyncTask;
 import com.lealone.plugins.bench.BenchTest;
 import com.lealone.transaction.aote.log.LogSyncService;
 
@@ -26,6 +27,8 @@ public abstract class EmbeddedBTest extends BenchTest {
     protected Boolean isRandom;
     protected Boolean write;
     protected CountDownLatch latch;
+
+    protected boolean runTaskInScheduler;
 
     protected EmbeddedBTest() {
         this(DEFAULT_ROW_COUNT);
@@ -170,7 +173,7 @@ public abstract class EmbeddedBTest extends BenchTest {
         }
     }
 
-    public abstract class BenchTestTask implements Runnable {
+    public abstract class BenchTestTask implements Runnable, AsyncTask {
         protected final int start;
         protected final int end;
         protected final String name;
