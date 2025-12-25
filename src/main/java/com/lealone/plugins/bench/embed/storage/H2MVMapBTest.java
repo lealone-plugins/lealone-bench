@@ -21,6 +21,7 @@ public class H2MVMapBTest extends StorageMapBTest {
     protected void init() {
         if (!inited.compareAndSet(false, true))
             return;
+        // 使用内存模式
         Builder builder = new Builder();
         // builder.pageSize(4 * 1024);
         // builder.keysPerPage(128);

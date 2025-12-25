@@ -43,8 +43,8 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
 
     protected void testWrite(int loop) {
         // singleThreadRandomWrite();
-        singleThreadSerialWrite();
-        // multiThreadsRandomWrite(loop);
+        // singleThreadSerialWrite();
+        multiThreadsRandomWrite(loop);
         // multiThreadsSerialWrite(loop);
     }
 
@@ -161,7 +161,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
         // pageSize = 1 * 1024;
         // pageSize = 1024 / 2 / 2;
         // pageSize = 512 * 1024;
-        builder.storagePath(storagePath).compress().pageSize(pageSize).minFillRate(30);
+        builder.storagePath(storagePath).compress().pageSize(pageSize).minFillRate(30).inMemory();
         storage = builder.openStorage();
     }
 
