@@ -43,8 +43,8 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
 
     protected void testWrite(int loop) {
         // singleThreadRandomWrite();
-        // singleThreadSerialWrite();
-        multiThreadsRandomWrite(loop);
+        singleThreadSerialWrite();
+        // multiThreadsRandomWrite(loop);
         // multiThreadsSerialWrite(loop);
     }
 
@@ -321,7 +321,7 @@ public abstract class StorageMapBTest extends EmbeddedBTest {
 
     void singleThreadRead(boolean random) {
         long t1 = System.currentTimeMillis();
-        write(random, 0, rowCount);
+        read(random, 0, rowCount);
         long t2 = System.currentTimeMillis();
         printResult("single-thread " + (random ? "random" : "serial") + " read time: " + (t2 - t1)
                 + " ms, count: " + rowCount);

@@ -72,7 +72,7 @@ public abstract class ClientServerBTest extends BenchTest {
         reinit = false;
 
         // prepare = true;
-        embedded = true;
+        // embedded = true;
         // useVirtualThread = true;
         runTaskInScheduler = true;
     }
@@ -122,6 +122,18 @@ public abstract class ClientServerBTest extends BenchTest {
         for (int i = 0; i < threadCount; i++) {
             conns[i] = getConnection();
         }
+        if (disableLealoneQueryCache) {
+            switch (dbType) {
+            case LEALONE:
+            case LM:
+            case LP:
+                for (int i = 0; i < threadCount; i++) {
+                    disableLealoneQueryCache(conns[i]);
+                }
+                break;
+            }
+        }
+
         for (int i = 0; i < benchTestLoop; i++) {
             if (reinit || i == 0) {
                 id.set(0);
@@ -149,19 +161,23 @@ public abstract class ClientServerBTest extends BenchTest {
                 + (t2 - t1) + " ms");
     }
 
+    private boolean isRunTaskInScheduler() {
+        return (async || embedded) && runTaskInScheduler && dbType == DbType.LEALONE;
+    }
+
     protected void run(int threadCount, Connection[] conns) throws Exception {
         ClientServerBTestThread[] threads = new ClientServerBTestThread[threadCount];
         for (int i = 0; i < threadCount; i++) {
             threads[i] = createBTestThread(i, conns[i]);
+            threads[i].setCloseConn(false);
         }
         long t1 = System.currentTimeMillis();
         for (int i = 0; i < threadCount; i++) {
-            threads[i].setCloseConn(false);
             if (useVirtualThread)
                 executorService.submit(threads[i]);
-            else if ((async || embedded) && runTaskInScheduler && dbType == DbType.LEALONE)
-                ((com.lealone.client.jdbc.JdbcConnection) conns[i]).getSession().getScheduler()
-                        .handle(threads[i]);
+            else if (isRunTaskInScheduler())
+                ((com.lealone.client.jdbc.JdbcConnection) conns[i]).getSession()
+                        .executeInScheduler(threads[i]);
             else
                 threads[i].start();
         }
@@ -183,6 +199,10 @@ public abstract class ClientServerBTest extends BenchTest {
                 getBTestName() + " sql count: " + (threadCount * innerLoop * sqlCountPerInnerLoop) + ", "
                         + (useVirtualThread ? "v" : "") + "thread count: " + threadCount + ", avg time: "
                         + avgTime + " ms" + ", total time: " + totalTime + " ms");
+
+        for (int i = 0; i < threadCount; i++) {
+            threads[i].end();
+        }
     }
 
     protected long toMillis(long duration) {
@@ -273,9 +293,6 @@ public abstract class ClientServerBTest extends BenchTest {
             }
             endTime = System.nanoTime();
             latch.countDown();
-            close(stmt, ps);
-            if (closeConn)
-                close(conn);
         }
 
         public void await() {
@@ -284,6 +301,12 @@ public abstract class ClientServerBTest extends BenchTest {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+
+        public void end() {
+            close(stmt, ps);
+            if (closeConn)
+                close(conn);
         }
 
         protected void printInnerLoopResult(long t1) {
@@ -303,30 +326,15 @@ public abstract class ClientServerBTest extends BenchTest {
             return getMySQLConnection();
         case POSTGRESQL:
             return getPgConnection();
-        case LEALONE: {
-            Connection conn = embedded ? getEmbeddedLealoneConnection(threadCount)
-                    : getLealoneConnection(useVirtualThread || async, runTaskInScheduler, threadCount);
-            if (disableLealoneQueryCache) {
-                disableLealoneQueryCache(conn);
-            }
-            return conn;
-        }
         case SQLITE:
             return getSQLiteConnection();
-        case LM: {
-            Connection conn = getLMConnection();
-            if (disableLealoneQueryCache) {
-                disableLealoneQueryCache(conn);
-            }
-            return conn;
-        }
-        case LP: {
-            Connection conn = getLPConnection();
-            if (disableLealoneQueryCache) {
-                disableLealoneQueryCache(conn);
-            }
-            return conn;
-        }
+        case LEALONE:
+            return embedded ? getEmbeddedLealoneConnection(threadCount)
+                    : getLealoneConnection(useVirtualThread || async, runTaskInScheduler, threadCount);
+        case LM:
+            return getLMConnection();
+        case LP:
+            return getLPConnection();
         default:
             throw new RuntimeException();
         }
@@ -450,17 +458,17 @@ public abstract class ClientServerBTest extends BenchTest {
     public static Connection getLealoneConnection(boolean async, boolean runTaskInScheduler,
             int threadCount) throws Exception {
         // async = true;
-        // threadCount = 8;
+        threadCount = Runtime.getRuntime().availableProcessors();
+        // threadCount = 1;
         String url = getLealoneUrl();
-        url += "&" + ConnectionSetting.IS_SHARED + "=true";
+        // url += "&" + ConnectionSetting.IS_SHARED + "=true";
         if (async && runTaskInScheduler) {
             url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=" + threadCount;
         } else {
-            url += "&" + ConnectionSetting.SCHEDULER_COUNT + "="
-                    + Runtime.getRuntime().availableProcessors();
+            url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=" + threadCount;
         }
         url += "&" + ConnectionSetting.MAX_PACKET_COUNT_PER_LOOP + "=50";
-        url += "&" + ConnectionSetting.NET_FACTORY_NAME + "=" + (async ? "nio" : "bio");
+        // url += "&" + ConnectionSetting.NET_FACTORY_NAME + "=" + (async ? "nio" : "bio");
         return getConnection(url, "root", "");
     }
 
