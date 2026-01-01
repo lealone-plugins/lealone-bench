@@ -7,8 +7,10 @@ package com.lealone.plugins.bench.cs.write;
 
 import java.sql.Connection;
 import java.sql.Statement;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.lealone.client.LealoneClient;
 import com.lealone.client.jdbc.JdbcPreparedStatement;
 import com.lealone.client.jdbc.JdbcStatement;
 import com.lealone.plugins.bench.cs.ClientServerBTest;
@@ -79,8 +81,28 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
         protected void executeUpdate(Statement statement) throws Exception {
             long t1 = System.nanoTime();
             for (int j = 0; j < innerLoop; j++) {
-                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
-                    statement.executeUpdate(nextSql());
+                if (isRunTaskInScheduler()) {
+                    LealoneClient.executeJdbcTask(conn, conn -> {
+                        for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+                            statement.executeUpdate(nextSql());
+                        }
+                        onComplete(sqlCountPerInnerLoop);
+                        return sqlCountPerInnerLoop;
+                    });
+                } else if (useVirtualThread) {
+                    executorService.submit(() -> {
+                        Statement s = stmtQueue.poll(1, TimeUnit.HOURS);
+                        for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+                            s.executeUpdate(nextSql());
+                        }
+                        onComplete(sqlCountPerInnerLoop);
+                        stmtQueue.add(s);
+                        return sqlCountPerInnerLoop;
+                    });
+                } else {
+                    for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+                        statement.executeUpdate(nextSql());
+                    }
                 }
             }
             printInnerLoopResult(t1);

@@ -16,12 +16,14 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.sqlite.SQLiteConfig;
 
+import com.lealone.client.LealoneClient;
 import com.lealone.db.ConnectionSetting;
 import com.lealone.db.Constants;
 import com.lealone.db.DbSetting;
@@ -74,7 +76,7 @@ public abstract class ClientServerBTest extends BenchTest {
         // prepare = true;
         // embedded = true;
         // useVirtualThread = true;
-        runTaskInScheduler = true;
+        // runTaskInScheduler = true;
     }
 
     public void start() {
@@ -115,7 +117,8 @@ public abstract class ClientServerBTest extends BenchTest {
             // 把一个Runnable任务扔给Executors.newFixedThreadPool()跑要比直接用Thread慢很多
             // executorService = Executors.newFixedThreadPool(threadCount);
             ThreadFactory factory = Thread.ofVirtual().name("vt-", 1).factory();
-            executorService = Executors.newThreadPerTaskExecutor(factory);
+            // executorService = Executors.newThreadPerTaskExecutor(factory);
+            executorService = Executors.newCachedThreadPool(factory);
         }
 
         Connection[] conns = new Connection[threadCount];
@@ -161,9 +164,12 @@ public abstract class ClientServerBTest extends BenchTest {
                 + (t2 - t1) + " ms");
     }
 
-    private boolean isRunTaskInScheduler() {
-        return (async || embedded) && runTaskInScheduler && dbType == DbType.LEALONE;
+    protected boolean isRunTaskInScheduler() {
+        // return (async || embedded) && runTaskInScheduler && dbType == DbType.LEALONE;
+        return runTaskInScheduler && dbType == DbType.LEALONE;
     }
+
+    protected final static LinkedBlockingQueue<Statement> stmtQueue = new LinkedBlockingQueue<>();
 
     protected void run(int threadCount, Connection[] conns) throws Exception {
         ClientServerBTestThread[] threads = new ClientServerBTestThread[threadCount];
@@ -171,17 +177,25 @@ public abstract class ClientServerBTest extends BenchTest {
             threads[i] = createBTestThread(i, conns[i]);
             threads[i].setCloseConn(false);
         }
+        if (useVirtualThread) {
+            stmtQueue.clear();
+            for (int i = 0; i < threadCount; i++) {
+                stmtQueue.add(threads[i].stmt);
+            }
+        }
         long t1 = System.currentTimeMillis();
         for (int i = 0; i < threadCount; i++) {
+            ClientServerBTestThread thread = threads[i];
             if (useVirtualThread)
-                executorService.submit(threads[i]);
+                executorService.submit(thread);
             else if (isRunTaskInScheduler())
-                ((com.lealone.client.jdbc.JdbcConnection) conns[i]).getSession()
-                        .executeInScheduler(threads[i]);
+                LealoneClient.executeJdbcTask(conns[i], conn -> {
+                    thread.run();
+                    return 0;
+                });
             else
                 threads[i].start();
         }
-
         long totalTime = 0;
         for (int i = 0; i < threadCount; i++) {
             threads[i].await();
@@ -217,6 +231,8 @@ public abstract class ClientServerBTest extends BenchTest {
 
         protected final Random random = new Random();
         protected final CountDownLatch latch = new CountDownLatch(1);
+        protected final AtomicInteger innerLoopRemaining = new AtomicInteger(
+                innerLoop * sqlCountPerInnerLoop);
 
         protected Connection conn;
         protected Statement stmt;
@@ -253,7 +269,8 @@ public abstract class ClientServerBTest extends BenchTest {
 
         public void prepareStatement(String sql) {
             try {
-                ps = conn.prepareStatement(sql);
+                if (prepare)
+                    ps = conn.prepareStatement(sql);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -277,7 +294,7 @@ public abstract class ClientServerBTest extends BenchTest {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
-                if (!async) {
+                if (!useVirtualThread && !async && !isRunTaskInScheduler()) {
                     onComplete();
                 }
             }
@@ -293,6 +310,20 @@ public abstract class ClientServerBTest extends BenchTest {
             }
             endTime = System.nanoTime();
             latch.countDown();
+        }
+
+        protected void onComplete(int c) {
+            if (innerLoopRemaining.addAndGet(-c) == 0) {
+                if (!autoCommit) {
+                    try {
+                        conn.commit();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                endTime = System.nanoTime();
+                latch.countDown();
+            }
         }
 
         public void await() {
@@ -457,16 +488,15 @@ public abstract class ClientServerBTest extends BenchTest {
 
     public static Connection getLealoneConnection(boolean async, boolean runTaskInScheduler,
             int threadCount) throws Exception {
+        // 调度器线程的数量默认就是cpu核数，默认就是最佳的
         // async = true;
         threadCount = Runtime.getRuntime().availableProcessors();
-        // threadCount = 1;
+        // if (!async && runTaskInScheduler)
+        // threadCount = threadCount * 2; // 在调度器中执行同步方法，线程数增加一倍更优
         String url = getLealoneUrl();
         // url += "&" + ConnectionSetting.IS_SHARED + "=true";
-        if (async && runTaskInScheduler) {
-            url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=" + threadCount;
-        } else {
-            url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=" + threadCount;
-        }
+        // url += "&" + ConnectionSetting.MAX_SHARED_SIZE + "=8";
+        url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=" + threadCount;
         url += "&" + ConnectionSetting.MAX_PACKET_COUNT_PER_LOOP + "=50";
         // url += "&" + ConnectionSetting.NET_FACTORY_NAME + "=" + (async ? "nio" : "bio");
         return getConnection(url, "root", "");

@@ -12,7 +12,7 @@
         <version>8.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>lealone-bench2</artifactId>
+    <artifactId>lealone-bench</artifactId>
     <packaging>jar</packaging>
     <version>8.0.0-SNAPSHOT</version>
 
