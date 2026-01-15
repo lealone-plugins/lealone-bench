@@ -64,7 +64,7 @@ public abstract class ClientServerBTest extends BenchTest {
     protected boolean runTaskInScheduler;
 
     public ClientServerBTest() {
-        benchTestLoop = 20;
+        benchTestLoop = 10;
         outerLoop = 15;
         innerLoop = 10;
         sqlCountPerInnerLoop = 20;
@@ -474,12 +474,14 @@ public abstract class ClientServerBTest extends BenchTest {
 
     public static String getLealoneUrl() {
         String url = "jdbc:lealone:tcp://localhost:" + Constants.DEFAULT_TCP_PORT + "/lealone";
-        url += "?ANALYZE_AUTO=0&" + ConnectionSetting.NETWORK_TIMEOUT + "=" + Integer.MAX_VALUE;
+        url += "?" + ConnectionSetting.NETWORK_TIMEOUT + "=" + Integer.MAX_VALUE;
+        url += "&ANALYZE_AUTO=0";
         return url;
     }
 
     public static Connection getEmbeddedLealoneConnection(int threadCount) throws Exception {
         SysProperties.setBaseDir(joinDirs("lealone"));
+        threadCount = Runtime.getRuntime().availableProcessors();
         String url = "jdbc:lealone:embed:EmbeddedBenchTestDB?" + DbSetting.PERSISTENT
         // + "=true&ANALYZE_AUTO=0";
                 + "=true&ANALYZE_AUTO=0&SCHEDULER_COUNT=" + threadCount;
@@ -514,7 +516,7 @@ public abstract class ClientServerBTest extends BenchTest {
         try {
             Statement statement = conn.createStatement();
             statement.executeUpdate("set QUERY_CACHE_SIZE 0");
-            statement.executeUpdate("set ANALYZE_AUTO 0");
+            // statement.executeUpdate("set ANALYZE_AUTO 0");
             // statement.executeUpdate("set OPTIMIZE_REUSE_RESULTS 0");
             statement.close();
         } catch (Exception e) {

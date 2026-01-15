@@ -76,6 +76,7 @@ public class JdbcStatementLoader implements RecordLoader {
     }
 
     private void executeBulkInsert(String sql) {
+        long t1 = System.currentTimeMillis();
         try {
             Connection conn = TpccLoad.getNextConnection();
             synchronized (conn) {
@@ -89,6 +90,7 @@ public class JdbcStatementLoader implements RecordLoader {
             throw new RuntimeException("Error loading into table '" + tableName + "' with SQL: " + sql,
                     e);
         }
+        TpccLoad.totalTime.addAndGet(System.currentTimeMillis() - t1);
     }
 
     private void write(StringBuilder b, Record r, String delim) throws Exception {

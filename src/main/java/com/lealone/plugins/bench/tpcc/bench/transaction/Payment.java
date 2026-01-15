@@ -138,10 +138,24 @@ public class Payment implements TpccConstants {
                 pStmts.getStatement(13).setInt(1, c_w_id);
                 pStmts.getStatement(13).setInt(2, c_d_id);
                 pStmts.getStatement(13).setString(3, c_last);
+                long t1 = System.currentTimeMillis();
                 try (ResultSet rs = pStmts.getStatement(13).executeQuery()) {
                     if (rs.next()) {
                         namecnt = rs.getInt(1);
                     }
+                }
+
+                String sql = "SELECT count(c_id) FROM customer WHERE c_w_id = " + c_w_id
+                        + " AND c_d_id = " + c_d_id + " AND c_last = '" + c_last + "'";
+                // long t1 = System.currentTimeMillis();
+                // try (ResultSet rs = pStmts.stmt.executeQuery(sql)) {
+                // if (rs.next()) {
+                // namecnt = rs.getInt(1);
+                // }
+                // }
+                long timeMillis = (System.currentTimeMillis() - t1);
+                if (timeMillis > 1) {
+                    // System.out.println("slow query: " + timeMillis + " ms, sql: " + sql + ";");
                 }
 
                 if (TRACE)

@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.lealone.common.util.ScriptReader;
 import com.lealone.plugins.bench.DbType;
@@ -201,9 +202,11 @@ public class TpccLoad extends TpccConfig {
         System.out.println(
                 "Total execution time: " + df1.format(minutes) + " minute(s), " + df1.format(seconds)
                         + " second(s) (" + df2.format(durationSeconds / 60.0f) + " minutes)");
-
+        System.out.println("Batch execution avg time: " + totalTime.get() / numConn + " ms");
         TpccLoad.executor.shutdown();
     }
+
+    public static AtomicLong totalTime = new AtomicLong();
 
     private void initConnections() {
         if (connections == null) {

@@ -66,13 +66,17 @@ public class TpccBench extends TpccConfig {
         if (args.length == 0) {
             loadConfig();
             measureType = getIntProperty("measure_type");
-            if (isTimeMeasure()) {
-                rampupTime = getIntProperty(RAMPUP_TIME);
-                measureTime = getIntProperty(MEASURE_TIME);
-            } else {
-                rampupTransactions = getIntProperty("measure__transactions");
-                measureTransactions = getIntProperty("measure__transactions");
-            }
+            rampupTime = getIntProperty(RAMPUP_TIME);
+            measureTime = getIntProperty(MEASURE_TIME);
+            // if (isTimeMeasure()) {
+            // rampupTime = getIntProperty(RAMPUP_TIME);
+            // measureTime = getIntProperty(MEASURE_TIME);
+            // } else {
+            // rampupTransactions = getIntProperty("rampup_transactions");
+            // measureTransactions = getIntProperty("measure_transactions");
+            // }
+            rampupTransactions = getIntProperty("rampup_transactions");
+            measureTransactions = getIntProperty("measure_transactions");
             joins = Boolean.parseBoolean(properties.getProperty(JOINS));
         } else {
             if ((args.length % 2) != 0) {
@@ -348,7 +352,7 @@ public class TpccBench extends TpccConfig {
                 TpccThread tt = threads[t];
                 time += tt.sum;
             }
-            System.out.println("time: " + time / numConn / (measureTransactions / 10));
+            System.out.println("time: " + time / numConn / (measureTransactions / 100));
         }
     }
 

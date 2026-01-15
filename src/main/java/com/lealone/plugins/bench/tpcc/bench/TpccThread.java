@@ -117,10 +117,10 @@ public class TpccThread extends Thread implements TpccConstants {
                     runTransaction();
                 }
                 int measureTransactions = tb.getMeasureTransactions();
-                int count = measureTransactions / 10;
+                int count = measureTransactions / 100;
                 for (int j = 0; j < count; j++) {
                     start = System.currentTimeMillis();
-                    for (int i = 0; i < 10; i++) {
+                    for (int i = 0; i < 100; i++) {
                         runTransaction();
                     }
                     stop = System.currentTimeMillis();

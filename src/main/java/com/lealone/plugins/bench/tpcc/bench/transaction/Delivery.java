@@ -56,9 +56,9 @@ public class Delivery implements TpccConstants {
                 if (TRACE)
                     logger.trace("DELETE FROM new_orders WHERE no_o_id = " + no_o_id + " AND no_d_id = "
                             + d_id + " AND no_w_id = " + w_id);
-                // pStmts.getStatement(26).setInt(1, no_o_id);
-                // pStmts.getStatement(26).setInt(2, d_id);
-                // pStmts.getStatement(26).setInt(3, w_id);
+                pStmts.getStatement(26).setInt(1, no_o_id);
+                pStmts.getStatement(26).setInt(2, d_id);
+                pStmts.getStatement(26).setInt(3, w_id);
                 // pStmts.getStatement(26).executeUpdate();
 
                 if (TRACE)
