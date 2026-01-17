@@ -64,8 +64,8 @@ public abstract class SingleRowUpdateBTest extends ClientServerWriteBTest {
         protected void prepare() throws Exception {
             int pk = random.nextInt(rowCount);
             int f1 = pk * 10;
-            ps.setInt(1, pk);
-            ps.setInt(2, f1);
+            ps.setInt(1, f1);
+            ps.setInt(2, pk);
         }
     }
 }

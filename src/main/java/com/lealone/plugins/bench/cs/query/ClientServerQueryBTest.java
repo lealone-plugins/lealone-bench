@@ -37,6 +37,9 @@ public abstract class ClientServerQueryBTest extends ClientServerBTest {
                     executePreparedQuery();
                 else
                     executeQuery(stmt);
+                if (useVirtualThread || isRunTaskInScheduler()) {
+                    onComplete(innerLoop * sqlCountPerInnerLoop);
+                }
             }
         }
 

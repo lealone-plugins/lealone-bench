@@ -64,7 +64,7 @@ public abstract class ClientServerBTest extends BenchTest {
     protected boolean runTaskInScheduler;
 
     public ClientServerBTest() {
-        benchTestLoop = 10;
+        benchTestLoop = 20;
         outerLoop = 15;
         innerLoop = 10;
         sqlCountPerInnerLoop = 20;
@@ -414,7 +414,7 @@ public abstract class ClientServerBTest extends BenchTest {
         // info.put("allowMultiQueries","true");
 
         info.put("useServerPrepStmts", "true");
-        info.put("cachePrepStmts", "true");
+        info.put("cachePrepStmts", "false"); // 如果为true比直接拼装sql执行还慢
         info.put("rewriteBatchedStatements", "true");
         // info.put("useCompression", "true");
         info.put("serverTimezone", "GMT");
