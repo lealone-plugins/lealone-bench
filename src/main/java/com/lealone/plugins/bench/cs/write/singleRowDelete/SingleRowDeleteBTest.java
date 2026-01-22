@@ -40,21 +40,20 @@ public abstract class SingleRowDeleteBTest extends ClientServerWriteBTest {
     }
 
     @Override
-    protected UpdateThreadBase createBTestThread(int id, Connection conn) {
-        return new UpdateThread(id, conn);
+    protected UpdateThreadBase createBTestThread() {
+        return new UpdateThread();
     }
 
     private class UpdateThread extends UpdateThreadBase {
-
-        UpdateThread(int id, Connection conn) {
-            super(id, conn);
-            prepareStatement("delete from SingleRowDeleteBTest where pk=?");
-        }
-
         @Override
         protected String nextSql() {
             int pk = random.nextInt(rowCount);
             return "delete from SingleRowDeleteBTest where pk=" + pk;
+        }
+
+        @Override
+        protected String prepareSql() {
+            return "delete from SingleRowDeleteBTest where pk=?";
         }
 
         @Override

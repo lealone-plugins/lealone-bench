@@ -5,23 +5,18 @@
  */
 package com.lealone.plugins.bench.cs.write;
 
-import java.sql.Connection;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.lealone.client.LealoneClient;
 import com.lealone.client.jdbc.JdbcPreparedStatement;
 import com.lealone.client.jdbc.JdbcStatement;
+import com.lealone.plugins.bench.DbType;
 import com.lealone.plugins.bench.cs.ClientServerBTest;
 
 public abstract class ClientServerWriteBTest extends ClientServerBTest {
 
     protected abstract class UpdateThreadBase extends ClientServerBTestThread {
-
-        public UpdateThreadBase(int id, Connection conn) {
-            super(id, conn);
-        }
 
         @Override
         protected void execute() throws Exception {
@@ -46,14 +41,12 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
         }
 
         protected void executeUpdateAsync(Statement statement) throws Exception {
-            long t1 = System.nanoTime();
             JdbcStatement stmt = (JdbcStatement) statement;
             AtomicInteger counter = new AtomicInteger(sqlCountPerInnerLoop * innerLoop);
-            for (int j = 0; j < innerLoop; j++) {
-                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+            for (int i = 0; i < innerLoop; i++) {
+                for (int j = 0; j < sqlCountPerInnerLoop; j++) {
                     stmt.executeUpdateAsync(nextSql()).onComplete(ar -> {
                         if (counter.decrementAndGet() == 0) {
-                            printInnerLoopResult(t1);
                             onComplete();
                         }
                     });
@@ -62,15 +55,13 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
         }
 
         protected void executePreparedUpdateAsync() throws Exception {
-            long t1 = System.nanoTime();
             JdbcPreparedStatement ps = (JdbcPreparedStatement) this.ps;
             AtomicInteger counter = new AtomicInteger(sqlCountPerInnerLoop * innerLoop);
-            for (int j = 0; j < innerLoop; j++) {
-                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+            for (int i = 0; i < innerLoop; i++) {
+                for (int j = 0; j < sqlCountPerInnerLoop; j++) {
                     prepare();
                     ps.executeUpdateAsync().onComplete(ar -> {
                         if (counter.decrementAndGet() == 0) {
-                            printInnerLoopResult(t1);
                             onComplete();
                         }
                     });
@@ -79,67 +70,58 @@ public abstract class ClientServerWriteBTest extends ClientServerBTest {
         }
 
         protected void executeUpdate(Statement statement) throws Exception {
-            long t1 = System.nanoTime();
-            for (int j = 0; j < innerLoop; j++) {
-                if (isRunTaskInScheduler()) {
-                    LealoneClient.executeJdbcTask(conn, conn -> {
-                        for (int i = 0; i < sqlCountPerInnerLoop; i++) {
-                            statement.executeUpdate(nextSql());
-                        }
-                        onComplete(sqlCountPerInnerLoop);
-                        return sqlCountPerInnerLoop;
-                    });
-                } else if (useVirtualThread) {
-                    executorService.submit(() -> {
-                        Statement s = stmtQueue.poll(1, TimeUnit.HOURS);
-                        for (int i = 0; i < sqlCountPerInnerLoop; i++) {
-                            s.executeUpdate(nextSql());
-                        }
-                        onComplete(sqlCountPerInnerLoop);
-                        stmtQueue.add(s);
-                        return sqlCountPerInnerLoop;
-                    });
+            for (int i = 0; i < innerLoop; i++) {
+                if (useVirtualThread) {
+                    for (int j = 0; j < sqlCountPerInnerLoop; j++) {
+                        executorService.submit(() -> {
+                            // 其他数据库用这种方式更慢，只适合用stmtQueue
+                            if (dbType == DbType.LEALONE) {
+                                Statement s = statement;
+                                // s = nextStatement();
+                                s.executeUpdate(nextSql());
+                            } else {
+                                Statement s = stmtQueue.poll(1, TimeUnit.HOURS);
+                                s.executeUpdate(nextSql());
+                                stmtQueue.add(s);
+                            }
+                            onComplete(1);
+                            return 1;
+                        });
+                    }
                 } else {
-                    for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+                    for (int j = 0; j < sqlCountPerInnerLoop; j++) {
                         statement.executeUpdate(nextSql());
                     }
                 }
             }
-            printInnerLoopResult(t1);
         }
 
         protected void executePreparedUpdate() throws Exception {
-            long t1 = System.nanoTime();
-            for (int j = 0; j < innerLoop; j++) {
-                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+            for (int i = 0; i < innerLoop; i++) {
+                for (int j = 0; j < sqlCountPerInnerLoop; j++) {
                     prepare();
                     ps.executeUpdate();
                 }
             }
-            printInnerLoopResult(t1);
         }
 
         protected void executeBatchUpdate() throws Exception {
-            long t1 = System.nanoTime();
-            for (int j = 0; j < innerLoop; j++) {
-                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+            for (int i = 0; i < innerLoop; i++) {
+                for (int j = 0; j < sqlCountPerInnerLoop; j++) {
                     stmt.addBatch(nextSql());
                 }
                 stmt.executeBatch();
             }
-            printInnerLoopResult(t1);
         }
 
         protected void executePreparedBatchUpdate() throws Exception {
-            long t1 = System.nanoTime();
-            for (int j = 0; j < innerLoop; j++) {
-                for (int i = 0; i < sqlCountPerInnerLoop; i++) {
+            for (int i = 0; i < innerLoop; i++) {
+                for (int j = 0; j < sqlCountPerInnerLoop; j++) {
                     prepare();
                     ps.addBatch();
                 }
                 ps.executeBatch();
             }
-            printInnerLoopResult(t1);
         }
     }
 }

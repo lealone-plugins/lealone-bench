@@ -32,17 +32,11 @@ public abstract class AppendBTest extends ClientServerWriteBTest {
     }
 
     @Override
-    protected UpdateThreadBase createBTestThread(int id, Connection conn) {
-        return new UpdateThread(id, conn);
+    protected UpdateThreadBase createBTestThread() {
+        return new UpdateThread();
     }
 
     private class UpdateThread extends UpdateThreadBase {
-
-        UpdateThread(int id, Connection conn) {
-            super(id, conn);
-            prepareStatement("insert into AppendBTest values(?,?,?)");
-        }
-
         @Override
         protected String nextSql() {
             int i = id.incrementAndGet();
@@ -50,6 +44,11 @@ public abstract class AppendBTest extends ClientServerWriteBTest {
             // return "insert into AppendBTest" + t + " values('n" + i + "'," + i + "," + (i * 10) + ")";
 
             return "insert into AppendBTest values('n" + i + "'," + i + "," + (i * 10) + ")";
+        }
+
+        @Override
+        protected String prepareSql() {
+            return "insert into AppendBTest values(?,?,?)";
         }
 
         @Override

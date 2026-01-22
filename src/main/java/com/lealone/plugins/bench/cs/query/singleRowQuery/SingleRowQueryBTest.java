@@ -40,20 +40,19 @@ public abstract class SingleRowQueryBTest extends ClientServerQueryBTest {
     }
 
     @Override
-    protected QueryThreadBase createBTestThread(int id, Connection conn) {
-        return new QueryThread(id, conn);
+    protected QueryThreadBase createBTestThread() {
+        return new QueryThread();
     }
 
     private class QueryThread extends QueryThreadBase {
-
-        QueryThread(int id, Connection conn) {
-            super(id, conn);
-            prepareStatement("select * from SingleRowQueryBTest where pk=?");
-        }
-
         @Override
         protected String nextSql() {
             return "select * from SingleRowQueryBTest where pk=" + random.nextInt(rowCount);
+        }
+
+        @Override
+        protected String prepareSql() {
+            return "select * from SingleRowQueryBTest where pk=?";
         }
 
         @Override

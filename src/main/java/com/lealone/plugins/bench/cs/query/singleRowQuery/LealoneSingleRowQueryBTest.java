@@ -5,7 +5,7 @@
  */
 package com.lealone.plugins.bench.cs.query.singleRowQuery;
 
-public class LealoneSingleRowQueryBTest  extends SingleRowQueryBTest {
+public class LealoneSingleRowQueryBTest extends SingleRowQueryBTest {
 
     public static void main(String[] args) {
         new LealoneSingleRowQueryBTest().start();

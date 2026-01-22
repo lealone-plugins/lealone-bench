@@ -24,26 +24,44 @@ public class AsyncMySQLSingleRowUpdateBTest {
         return TimeUnit.NANOSECONDS.toMillis(duration);
     }
 
-    static int sqlCount = 200;
+    static Vertx vertx;
+    static int sqlCount = 100;
     static int threadCount = 16;
+    static int outerLoop = 15;
 
     public static void main(String[] args) throws InterruptedException {
         VertxOptions vertxOptions = new VertxOptions();
         vertxOptions.setEventLoopPoolSize(threadCount);
         vertxOptions.setBlockedThreadCheckInterval(60 * 60 * 1000);
-        Vertx vertx = Vertx.vertx(vertxOptions);
+        vertx = Vertx.vertx(vertxOptions);
         SqlClient[] clients = new SqlClient[threadCount];
         clients[0] = getSqlClient(vertx);
         for (int i = 0; i < threadCount; i++) {
             // clients[i] = getSqlClient();
             clients[i] = clients[0]; // 每个线程一个SqlClient或共用一个SqlClient，性能没区别
         }
-        for (int n = 0; n < 260; n++) {
-            Thread[] threads = new Thread[threadCount];
+
+        for (int i = 0; i < outerLoop; i++) {
+            long t1 = System.currentTimeMillis();
+            run(threadCount, clients);
+            long t2 = System.currentTimeMillis();
+            System.out.println("AsyncVertxMySQLSingleRowUpdateBTest sql count: "
+                    + (outerLoop * threadCount * sqlCount) + ", total time: " + (t2 - t1) + " ms");
+        }
+
+        for (int i = 0; i < threadCount; i++) {
+            clients[i].close();
+        }
+        vertx.close();
+    }
+
+    public static void run(int threadCount, SqlClient[] clients) {
+        for (int n = 0; n < 15; n++) {
+            // Thread[] threads = new Thread[threadCount];
             Test[] tests = new Test[threadCount];
             for (int i = 0; i < threadCount; i++) {
                 tests[i] = new Test(clients[i], i + 10);
-                threads[i] = new Thread(tests[i]);
+                // threads[i] = new Thread(tests[i]);
             }
             long t1 = System.currentTimeMillis();
             for (int i = 0; i < threadCount; i++) {
@@ -60,14 +78,10 @@ public class AsyncMySQLSingleRowUpdateBTest {
             long avgTime = toMillis(totalTime / threadCount);
             totalTime = (t2 - t1);
 
-            System.out.println("AsyncMySQLSingleRowUpdateBTest sql count: " + sqlCount * threadCount
+            System.out.println("AsyncVertxMySQLSingleRowUpdateBTest sql count: " + sqlCount * threadCount
                     + ", thread count: " + threadCount + ", avg time: " + avgTime + " ms"
                     + ", total time: " + totalTime + " ms");
         }
-        for (int i = 0; i < threadCount; i++) {
-            clients[i].close();
-        }
-        vertx.close();
     }
 
     public static SqlClient getSqlClient(Vertx vertx) {

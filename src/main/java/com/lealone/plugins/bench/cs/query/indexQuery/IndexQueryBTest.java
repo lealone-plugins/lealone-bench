@@ -59,19 +59,19 @@ public abstract class IndexQueryBTest extends ClientServerQueryBTest {
     }
 
     @Override
-    protected QueryThreadBase createBTestThread(int id, Connection conn) {
-        return new QueryThread(id, conn);
+    protected QueryThreadBase createBTestThread() {
+        return new QueryThread();
     }
 
     private class QueryThread extends QueryThreadBase {
-        QueryThread(int id, Connection conn) {
-            super(id, conn);
-            prepareStatement("select * from IndexQueryBTest where name=?");
-        }
-
         @Override
         protected String nextSql() {
             return "select * from IndexQueryBTest where name='n" + random.nextInt(rowCount) + "'";
+        }
+
+        @Override
+        protected String prepareSql() {
+            return "select * from IndexQueryBTest where name=?";
         }
 
         @Override

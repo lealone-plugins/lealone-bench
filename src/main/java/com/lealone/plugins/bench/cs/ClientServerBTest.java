@@ -23,12 +23,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.sqlite.SQLiteConfig;
 
-import com.lealone.client.LealoneClient;
 import com.lealone.db.ConnectionSetting;
 import com.lealone.db.Constants;
 import com.lealone.db.DbSetting;
 import com.lealone.db.SysProperties;
 import com.lealone.db.async.AsyncTask;
+import com.lealone.db.scheduler.SchedulerFactoryBase;
 import com.lealone.plugins.bench.BenchTest;
 import com.lealone.plugins.bench.DbType;
 
@@ -61,22 +61,24 @@ public abstract class ClientServerBTest extends BenchTest {
 
     protected boolean embedded;
     protected boolean useVirtualThread;
-    protected boolean runTaskInScheduler;
+
+    protected int connCount;
 
     public ClientServerBTest() {
-        benchTestLoop = 20;
+        benchTestLoop = 30;
         outerLoop = 15;
         innerLoop = 10;
-        sqlCountPerInnerLoop = 20;
+        sqlCountPerInnerLoop = 10;
 
         threadCount = 16;
+        // connCount = 160;
 
         reinit = false;
 
         // prepare = true;
         // embedded = true;
+
         // useVirtualThread = true;
-        // runTaskInScheduler = true;
     }
 
     public void start() {
@@ -113,16 +115,16 @@ public abstract class ClientServerBTest extends BenchTest {
 
     public void run() throws Exception {
         if (useVirtualThread) {
-            // 以下两种方式都不如直接用Thread跑起来快
-            // 把一个Runnable任务扔给Executors.newFixedThreadPool()跑要比直接用Thread慢很多
-            // executorService = Executors.newFixedThreadPool(threadCount);
+            // 这种方式遇到阻塞io会挂起平台线程
+            // executorService = Executors.newFixedThreadPool(1, factory);
             ThreadFactory factory = Thread.ofVirtual().name("vt-", 1).factory();
-            // executorService = Executors.newThreadPerTaskExecutor(factory);
-            executorService = Executors.newCachedThreadPool(factory);
+            executorService = Executors.newThreadPerTaskExecutor(factory);
         }
 
-        Connection[] conns = new Connection[threadCount];
-        for (int i = 0; i < threadCount; i++) {
+        if (connCount == 0)
+            connCount = useVirtualThread ? threadCount * 1 : threadCount;
+        Connection[] conns = new Connection[connCount];
+        for (int i = 0; i < connCount; i++) {
             conns[i] = getConnection();
         }
         if (disableLealoneQueryCache) {
@@ -130,7 +132,7 @@ public abstract class ClientServerBTest extends BenchTest {
             case LEALONE:
             case LM:
             case LP:
-                for (int i = 0; i < threadCount; i++) {
+                for (int i = 0; i < connCount; i++) {
                     disableLealoneQueryCache(conns[i]);
                 }
                 break;
@@ -144,7 +146,7 @@ public abstract class ClientServerBTest extends BenchTest {
             }
             runOuterLoop(threadCount, conns);
         }
-        for (int i = 0; i < threadCount; i++) {
+        for (int i = 0; i < connCount; i++) {
             close(conns[i]);
         }
 
@@ -164,35 +166,35 @@ public abstract class ClientServerBTest extends BenchTest {
                 + (t2 - t1) + " ms");
     }
 
-    protected boolean isRunTaskInScheduler() {
-        // return (async || embedded) && runTaskInScheduler && dbType == DbType.LEALONE;
-        return runTaskInScheduler && dbType == DbType.LEALONE;
-    }
-
     protected final static LinkedBlockingQueue<Statement> stmtQueue = new LinkedBlockingQueue<>();
+    protected static Statement[] stmtArray;
+    protected static final AtomicInteger stmtIndex = new AtomicInteger(0);
+
+    public static Statement nextStatement() {
+        return stmtArray[SchedulerFactoryBase.getAndIncrementIndex(stmtIndex) % stmtArray.length];
+    }
 
     protected void run(int threadCount, Connection[] conns) throws Exception {
         ClientServerBTestThread[] threads = new ClientServerBTestThread[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            threads[i] = createBTestThread(i, conns[i]);
-            threads[i].setCloseConn(false);
+            threads[i] = createBTestThread();
+            threads[i].init(i, conns[i]);
         }
         if (useVirtualThread) {
             stmtQueue.clear();
-            for (int i = 0; i < threadCount; i++) {
-                stmtQueue.add(threads[i].stmt);
+            stmtArray = new Statement[conns.length];
+            for (int i = 0; i < conns.length; i++) {
+                Statement stmt = conns[i].createStatement();
+                stmtQueue.add(stmt);
+                stmtArray[i] = stmt;
             }
+            // JdbcStatement.stmtQueue = stmtQueue;
         }
         long t1 = System.currentTimeMillis();
         for (int i = 0; i < threadCount; i++) {
             ClientServerBTestThread thread = threads[i];
             if (useVirtualThread)
                 executorService.submit(thread);
-            else if (isRunTaskInScheduler())
-                LealoneClient.executeJdbcTask(conns[i], conn -> {
-                    thread.run();
-                    return 0;
-                });
             else
                 threads[i].start();
         }
@@ -200,11 +202,6 @@ public abstract class ClientServerBTest extends BenchTest {
         for (int i = 0; i < threadCount; i++) {
             threads[i].await();
             totalTime += threads[i].getTotalTime();
-
-            // System.out.println(threads[i].getName() + " start time: " //
-            // + toMillis(threads[i].getStartTime()) + ", end time: " //
-            // + toMillis(threads[i].getEndTime()) + ", total time: " //
-            // + toMillis(threads[i].getTotalTime()));
         }
         long t2 = System.currentTimeMillis();
         long avgTime = toMillis(totalTime / threadCount);
@@ -223,8 +220,12 @@ public abstract class ClientServerBTest extends BenchTest {
         return TimeUnit.NANOSECONDS.toMillis(duration);
     }
 
-    protected ClientServerBTestThread createBTestThread(int id, Connection conn) {
+    protected ClientServerBTestThread createBTestThread() {
         throw new RuntimeException("not supports");
+    }
+
+    protected boolean isQuery() {
+        return false;
     }
 
     protected abstract class ClientServerBTestThread extends Thread implements AsyncTask {
@@ -237,15 +238,18 @@ public abstract class ClientServerBTest extends BenchTest {
         protected Connection conn;
         protected Statement stmt;
         protected PreparedStatement ps;
-        protected boolean closeConn = true;
+        protected boolean closeConn;
         protected long startTime;
         protected long endTime;
 
-        public ClientServerBTestThread(int id, Connection conn) {
-            super(getBTestName() + "Thread-" + id);
+        public void init(int id, Connection conn) {
+            setName(getBTestName() + "Thread-" + id);
             this.conn = conn;
             try {
                 this.stmt = conn.createStatement();
+                String sql = prepareSql();
+                if (sql != null)
+                    prepareStatement(sql);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -263,10 +267,6 @@ public abstract class ClientServerBTest extends BenchTest {
             return endTime - startTime;
         }
 
-        public void setCloseConn(boolean closeConn) {
-            this.closeConn = closeConn;
-        }
-
         public void prepareStatement(String sql) {
             try {
                 if (prepare)
@@ -277,6 +277,10 @@ public abstract class ClientServerBTest extends BenchTest {
         }
 
         protected abstract String nextSql();
+
+        protected String prepareSql() {
+            return null;
+        }
 
         protected void prepare() throws Exception {
         }
@@ -294,7 +298,7 @@ public abstract class ClientServerBTest extends BenchTest {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
-                if (!useVirtualThread && !async && !isRunTaskInScheduler()) {
+                if (!useVirtualThread && !async) {
                     onComplete();
                 }
             }
@@ -314,15 +318,7 @@ public abstract class ClientServerBTest extends BenchTest {
 
         protected void onComplete(int c) {
             if (innerLoopRemaining.addAndGet(-c) == 0) {
-                if (!autoCommit) {
-                    try {
-                        conn.commit();
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                endTime = System.nanoTime();
-                latch.countDown();
+                onComplete();
             }
         }
 
@@ -361,7 +357,7 @@ public abstract class ClientServerBTest extends BenchTest {
             return getSQLiteConnection();
         case LEALONE:
             return embedded ? getEmbeddedLealoneConnection(threadCount)
-                    : getLealoneConnection(useVirtualThread || async, runTaskInScheduler, threadCount);
+                    : getLealoneConnection(async, useVirtualThread, threadCount, connCount, isQuery());
         case LM:
             return getLMConnection();
         case LP:
@@ -488,19 +484,30 @@ public abstract class ClientServerBTest extends BenchTest {
         return DriverManager.getConnection(url, "root", "");
     }
 
-    public static Connection getLealoneConnection(boolean async, boolean runTaskInScheduler,
-            int threadCount) throws Exception {
-        // 调度器线程的数量默认就是cpu核数，默认就是最佳的
-        // async = true;
-        threadCount = Runtime.getRuntime().availableProcessors();
-        // if (!async && runTaskInScheduler)
-        // threadCount = threadCount * 2; // 在调度器中执行同步方法，线程数增加一倍更优
+    public static Connection getLealoneConnection(boolean async, boolean useVirtualThread,
+            int threadCount, int connCount, boolean isQuery) throws Exception {
+        if (useVirtualThread) {
+            if (isQuery)
+                threadCount = threadCount * 1; // 查询场景，线程数增加一倍更优
+            else
+                threadCount = 2; // 更新场景，线程数是2更优
+        } else {
+            // 调度器线程的数量默认就是cpu核数，默认就是最佳的
+            // async = true;
+            threadCount = Runtime.getRuntime().availableProcessors();
+            threadCount = threadCount * 1;
+        }
         String url = getLealoneUrl();
-        // url += "&" + ConnectionSetting.IS_SHARED + "=true";
-        // url += "&" + ConnectionSetting.MAX_SHARED_SIZE + "=8";
-        url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=" + threadCount;
-        url += "&" + ConnectionSetting.MAX_PACKET_COUNT_PER_LOOP + "=50";
-        // url += "&" + ConnectionSetting.NET_FACTORY_NAME + "=" + (async ? "nio" : "bio");
+        if (async || useVirtualThread) {
+            url += "&" + ConnectionSetting.IS_SHARED + "=false";
+            int maxSharedSize = (connCount / threadCount);
+            // maxSharedSize = 1;
+            if (maxSharedSize > 0)
+                url += "&" + ConnectionSetting.MAX_SHARED_SIZE + "=" + maxSharedSize;
+            url += "&" + ConnectionSetting.SCHEDULER_COUNT + "=" + threadCount;
+            url += "&" + ConnectionSetting.MAX_PACKET_COUNT_PER_LOOP + "=50";
+        }
+        url += "&" + ConnectionSetting.NET_FACTORY_NAME + "=" + (async ? "nio" : "bio");
         return getConnection(url, "root", "");
     }
 

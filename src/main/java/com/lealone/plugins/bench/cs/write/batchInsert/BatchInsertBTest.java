@@ -47,20 +47,19 @@ public abstract class BatchInsertBTest extends ClientServerWriteBTest {
     }
 
     @Override
-    protected UpdateThreadBase createBTestThread(int id, Connection conn) {
-        return new UpdateThread(id, conn);
+    protected UpdateThreadBase createBTestThread() {
+        return new UpdateThread();
     }
 
     private class UpdateThread extends UpdateThreadBase {
-
-        UpdateThread(int id, Connection conn) {
-            super(id, conn);
-            prepareStatement("insert into BatchInsertBTest values(?,1)");
-        }
-
         @Override
         protected String nextSql() {
             return "insert into BatchInsertBTest values(" + id.incrementAndGet() + ",1)";
+        }
+
+        @Override
+        protected String prepareSql() {
+            return "insert into BatchInsertBTest values(?,1)";
         }
 
         @Override

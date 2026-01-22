@@ -41,23 +41,22 @@ public abstract class SingleRowUpdateBTest extends ClientServerWriteBTest {
     }
 
     @Override
-    protected UpdateThreadBase createBTestThread(int id, Connection conn) {
-        return new UpdateThread(id, conn);
+    protected UpdateThreadBase createBTestThread() {
+        return new UpdateThread();
     }
 
     private class UpdateThread extends UpdateThreadBase {
-
-        UpdateThread(int id, Connection conn) {
-            super(id, conn);
-            prepareStatement("update SingleRowUpdateBTest set f1=? where pk=?");
-        }
-
         @Override
         protected String nextSql() {
             int pk = random.nextInt(rowCount);
             int f1 = pk * 10;
             // pk = 1;
             return "update SingleRowUpdateBTest set f1=" + f1 + " where pk=" + pk;
+        }
+
+        @Override
+        protected String prepareSql() {
+            return "update SingleRowUpdateBTest set f1=? where pk=?";
         }
 
         @Override

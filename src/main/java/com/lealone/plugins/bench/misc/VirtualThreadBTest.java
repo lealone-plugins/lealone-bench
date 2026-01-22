@@ -104,7 +104,7 @@ public class VirtualThreadBTest {
     }
 
     public static void main4(String[] args) throws Exception {
-        Connection conn = ClientServerBTest.getLealoneConnection(false, false, 8);
+        Connection conn = ClientServerBTest.getLealoneConnection(false, false, 8, 8, false);
         // h2和mysql的jdbc client都是基于synchronized来实现的
         // 所以调用insertVirtualThread反而比调用insertSync
         // 虚拟线程遇到synchronized会阻塞系统线程
