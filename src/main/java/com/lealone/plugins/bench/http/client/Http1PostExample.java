@@ -3,7 +3,6 @@ package com.lealone.plugins.bench.http.client;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.StringEntity;
@@ -12,7 +11,7 @@ import org.apache.hc.core5.http.io.entity.StringEntity;
 public class Http1PostExample {
     public static void main(String[] args) {
         // 1. 创建默认的 HttpClient 实例（默认支持 HTTP/1.1）
-        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpClient = Http1GetExample.createHttpClient()) {
 
             // 2. 创建 POST 请求对象，传入目标 URL
             HttpPost httpPost = new HttpPost("http://localhost:8080/test");

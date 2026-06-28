@@ -7,29 +7,41 @@ import java.util.concurrent.TimeUnit;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
+import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.H2AsyncClientBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.reactor.IOReactorConfig;
+import org.apache.hc.core5.util.Timeout;
 
 public class Http2GetExample {
 
-    public static void main(String[] args) throws Exception {
-        int threadCount = 1;
-        IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(1).build();
-        CloseableHttpAsyncClient[] httpClients = new CloseableHttpAsyncClient[threadCount];
-
-        for (int i = 0; i < threadCount; i++) {
-            httpClients[i] = H2AsyncClientBuilder.create().setIOReactorConfig(ioReactorConfig).build();
+    public static CloseableHttpAsyncClient[] createHttpClients(int clientCount, int ioThreadCount) {
+        IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(ioThreadCount)
+                .build();
+        CloseableHttpAsyncClient[] httpClients = new CloseableHttpAsyncClient[clientCount];
+        ConnectionConfig connectionConfig = ConnectionConfig.custom()
+                .setConnectTimeout(Timeout.of(5, TimeUnit.DAYS))
+                .setSocketTimeout(Timeout.of(5, TimeUnit.DAYS)).build();
+        for (int i = 0; i < clientCount; i++) {
+            httpClients[i] = H2AsyncClientBuilder.create().setDefaultConnectionConfig(connectionConfig)
+                    .setIOReactorConfig(ioReactorConfig).build();
             httpClients[i].start();
         }
+        return httpClients;
+    }
+
+    public static void main(String[] args) throws Exception {
+        int clientCount = 1;
+        int ioThreadCount = 1;
+        CloseableHttpAsyncClient[] httpClients = createHttpClients(clientCount, ioThreadCount);
 
         // CloseableHttpAsyncClient httpClient = HttpAsyncClients.createHttp2Default();
         // httpClient.start();
         for (int n = 0; n < 300; n++) {
             long t1 = System.currentTimeMillis();
-            Thread[] threads = new Thread[threadCount];
-            for (int i = 0; i < threadCount; i++) {
+            Thread[] threads = new Thread[clientCount];
+            for (int i = 0; i < clientCount; i++) {
                 int index = i;
                 threads[i] = new Thread(() -> {
                     try {
@@ -40,7 +52,7 @@ public class Http2GetExample {
                 });
                 threads[i].start();
             }
-            for (int i = 0; i < threadCount; i++) {
+            for (int i = 0; i < clientCount; i++) {
                 threads[i].join();
             }
             System.out.println(
@@ -48,7 +60,7 @@ public class Http2GetExample {
                             + failed + ", total time: " + (System.currentTimeMillis() - t1) + " ms");
             completed = failed = 0;
         }
-        for (int i = 0; i < threadCount; i++) {
+        for (int i = 0; i < clientCount; i++) {
             httpClients[i].close();
         }
     }

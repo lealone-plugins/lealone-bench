@@ -18,21 +18,14 @@ import org.apache.hc.core5.reactor.IOReactorConfig;
 public class Http2PostExample {
 
     public static void main(String[] args) throws Exception {
-        int threadCount = 1;
-        IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(1).build();
-        CloseableHttpAsyncClient[] httpClients = new CloseableHttpAsyncClient[threadCount];
-
-        for (int i = 0; i < threadCount; i++) {
-            httpClients[i] = H2AsyncClientBuilder.create().setIOReactorConfig(ioReactorConfig).build();
-            // httpClients[i].start();
-        }
-
-        // CloseableHttpAsyncClient httpClient = HttpAsyncClients.createHttp2Default();
-        // httpClient.start();
+        int clientCount = 1;
+        int ioThreadCount = 1;
+        CloseableHttpAsyncClient[] httpClients = Http2GetExample.createHttpClients(clientCount,
+                ioThreadCount);
         for (int n = 0; n < 200; n++) {
             long t1 = System.currentTimeMillis();
-            Thread[] threads = new Thread[threadCount];
-            for (int i = 0; i < threadCount; i++) {
+            Thread[] threads = new Thread[clientCount];
+            for (int i = 0; i < clientCount; i++) {
                 int index = i;
                 threads[i] = new Thread(() -> {
                     try {
@@ -43,18 +36,20 @@ public class Http2PostExample {
                 });
                 threads[i].start();
             }
-            for (int i = 0; i < threadCount; i++) {
+            for (int i = 0; i < clientCount; i++) {
                 threads[i].join();
             }
-            System.out.println("total time: " + (System.currentTimeMillis() - t1) + " completed: "
-                    + completed + " failed: " + failed);
+            System.out.println(
+                    "async http2 post count: " + count + ", completed: " + completed + " failed: "
+                            + failed + ", total time: " + (System.currentTimeMillis() - t1) + " ms");
             completed = failed = 0;
         }
-        for (int i = 0; i < threadCount; i++) {
+        for (int i = 0; i < clientCount; i++) {
             httpClients[i].close();
         }
     }
 
+    static int count = 1000;
     static int completed;
     static int failed;
 
@@ -78,7 +73,6 @@ public class Http2PostExample {
         // 用于在异步回调完成前阻塞主线程
         for (int i = 0; i < 1; i++) {
             long t1 = System.currentTimeMillis();
-            int count = 1000;
             CountDownLatch latch = new CountDownLatch(count);
             for (int n = 0; n < count; n++) {
                 // int inidex = n;
